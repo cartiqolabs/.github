@@ -388,7 +388,7 @@
     <fieldset>
       <legend>Theme</legend>
       <div class="themes" id="themes" role="radiogroup" aria-label="Theme"></div>
-      <div class="group" data-when="theme:custom">
+      <div class="group" data-when="theme:custom" hidden>
         <div class="two">
           <div class="field">Background <button type="button" class="color-button" data-color="bg"></button></div>
           <div class="field">Text <button type="button" class="color-button" data-color="ink"></button></div>
@@ -409,7 +409,7 @@
         <label><input type="radio" name="fill" data-key="fill" value="image"><span>Image</span></label>
       </div>
 
-      <div class="group" data-when="fill:gradient">
+      <div class="group" data-when="fill:gradient" hidden>
         <div class="field">
           <span class="label-row">Fades to <button type="button" class="link-button" id="bg2-auto">Use automatic</button></span>
           <button type="button" class="color-button" data-color="bg2"></button>
@@ -419,7 +419,7 @@
         </label>
       </div>
 
-      <div class="group" data-when="fill:glow">
+      <div class="group" data-when="fill:glow" hidden>
         <label>Strength
           <span class="range"><input type="range" data-key="glow" min="5" max="100" step="5"><output data-out="glow" data-unit="%"></output></span>
         </label>
@@ -435,7 +435,7 @@
         <span class="hint">The glow uses the dot colour.</span>
       </div>
 
-      <div class="group" data-when="fill:image">
+      <div class="group" data-when="fill:image" hidden>
         <div class="two">
           <button type="button" id="image-pick">Choose image</button>
           <button type="button" id="image-remove">Remove</button>
@@ -460,7 +460,7 @@
           <option value="none">None</option>
         </select>
       </label>
-      <div class="two" data-when="pattern:!none">
+      <div class="two" data-when="pattern:!none" hidden>
         <label>Size
           <span class="range"><input type="range" data-key="patternSize" min="50" max="250" step="10"><output data-out="patternSize" data-unit="%"></output></span>
         </label>
@@ -544,9 +544,20 @@
   Made by <a href="https://github.com/cartiqolabs">CARTIQO Labs</a>. The wordmark is drawn from the same strokes as the CARTIQO logo.
 </footer>
 
-<script src="banner.js"></script>
 <script>
+// GitHub Pages lets browsers keep files for 10 minutes, so a new page can meet
+// an old banner.js. Asking for it with the page's deploy time keeps the two in step.
 (function () {
+  const s = document.createElement('script');
+  s.src = 'banner.js?v=' + (Date.parse(document.lastModified) || Date.now());
+  s.onload = start;
+  s.onerror = function () {
+    document.getElementById('status').textContent = 'The banner code did not load. Reload the page to try again.';
+  };
+  document.head.appendChild(s);
+})();
+
+function start() {
   'use strict';
   const B = window.CartiqoBanner;
   const $ = function (id) { return document.getElementById(id); };
@@ -1228,7 +1239,7 @@
 
   syncControls();
   update();
-})();
+}
 </script>
 </body>
 </html>
