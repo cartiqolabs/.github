@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-label="CARTIQO. Honest by default.">
+  <title>CARTIQO. Honest by default.</title>
+
+  <defs>
+    <pattern id="ctq-grid-dark" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0 V40 M0 40 H40" fill="none" stroke="#F4F4F6" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="360" fill="#0E1013"/>
+  <rect width="1280" height="360" fill="url(#ctq-grid-dark)"/>
+  <rect x="0.5" y="0.5" width="1279" height="359" fill="none" stroke="#F4F4F6" stroke-opacity="0.1"/>
+
+  <g fill="none" stroke="#F4F4F6" stroke-opacity="0.28" stroke-width="1.25" stroke-linecap="square">
+    <path d="M40 62 V40 H62"/>
+    <path d="M1218 40 H1240 V62"/>
+    <path d="M1240 298 V320 H1218"/>
+    <path d="M62 320 H40 V298"/>
+  </g>
+
+  <text x="642.6" y="78" fill="#F4F4F6" fill-opacity="0.45"
+        font-family="Geist, Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="13" font-weight="500" letter-spacing="5.2" text-anchor="middle">ONE ACCOUNT · EIGHT PRODUCTS</text>
+
+  <g transform="translate(375.5 118) scale(2.15)" fill="none" stroke="#F4F4F6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 7 H15 A8 8 0 0 0 7 15 V39 A8 8 0 0 0 15 47 H32"/>
+    <path d="M40 47 L54 7 L68 47 M46.5 33 H61.5"/>
+    <path d="M76 47 V7 H93 A9 9 0 0 1 93 25 H76 M85 25 L102 47"/>
+    <path d="M107 7 H137 M122 7 V47"/>
+    <path d="M148 7 V47"/>
+    <path d="M166 7 H178 A8 8 0 0 1 186 15 V39 A8 8 0 0 1 178 47 H166 A8 8 0 0 1 158 39 V15 A8 8 0 0 1 166 7 Z"/>
+    <path d="M175 33 L190 49"/>
+    <path d="M202 7 H214 A8 8 0 0 1 222 15 V39 A8 8 0 0 1 214 47 H202 A8 8 0 0 1 194 39 V15 A8 8 0 0 1 202 7 Z"/>
+    <circle cx="234" cy="43" r="4" fill="#7C5CFF" stroke="none"/>
+  </g>
+
+  <path d="M375.5 272 H904.5" stroke="#F4F4F6" stroke-opacity="0.16" stroke-width="1"/>
+
+  <text x="643.2" y="311" fill="#F4F4F6" fill-opacity="0.68"
+        font-family="Geist, Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="18" font-weight="500" letter-spacing="6.4" text-anchor="middle">HONEST BY DEFAULT</text>
+</svg>

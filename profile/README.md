@@ -1,14 +1,17 @@
 <div align="center">
 
-# CARTIQO Labs
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cartiqolabs/.github/main/profile/assets/banner-dark.svg">
+  <img alt="CARTIQO. One account, eight products. Honest by default." src="https://raw.githubusercontent.com/cartiqolabs/.github/main/profile/assets/banner-light.svg">
+</picture>
 
-Where CARTIQO is built. One account, eight products, made in Denmark.
+<br>
 
 [cartiqolabs.com](https://cartiqolabs.com) · [Open source](https://github.com/CartiqoFramework)
 
 </div>
 
-CARTIQO is a family of products that share one account. Sign up once and you're in everywhere: your Qoins, Club perks, badges and notifications follow you from one product to the next.
+CARTIQO Labs is where CARTIQO gets built, in Denmark. CARTIQO is a family of products that share one account. Sign up once and you're in everywhere: your Qoins, Club perks, badges and notifications follow you from one product to the next.
 
 ## The products
 
