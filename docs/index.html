@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Banner maker · CARTIQO Labs</title>
-<meta name="description" content="Make CARTIQO banners in the sizes GitHub, Discord, X, LinkedIn and YouTube want.">
+<title>Banners and logos · CARTIQO Labs</title>
+<meta name="description" content="Make CARTIQO banners in the sizes GitHub, Discord, X, LinkedIn and YouTube want, and CARTIQO logos and icons.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E1013'/%3E%3Cpath d='M19.5 6 H11 A4 4 0 0 0 7 10 V22 A4 4 0 0 0 11 26 H19.5' fill='none' stroke='%23F4F4F6' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='24' r='2.2' fill='%237C5CFF'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -121,6 +121,13 @@
     font: 500 11px/1 Geist, system-ui, sans-serif;
     color: #FF7A80;
   }
+  .canvas.checker { background: repeating-conic-gradient(rgba(128, 128, 128, 0.22) 0 25%, transparent 0 50%) 0 0 / 16px 16px; border-radius: 4px; }
+  .canvas img.logo { height: min(260px, 42vh); width: auto; max-width: 100%; object-fit: contain; box-shadow: none; border-radius: 0; }
+  .mode { padding: 16px 20px; }
+  .mode .segmented span { padding: 8px 0; font-size: 14px; }
+  .sizes { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sizes button { height: 28px; padding: 0 10px; font: 400 12px/1 'Geist Mono', ui-monospace, monospace; }
+  .sizes button.on { border-color: var(--ink); background: var(--surface-2); }
   .meta { margin: 0; display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; }
   .meta b { font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 500; color: var(--ink); font-size: 12px; }
 
@@ -332,6 +339,7 @@
     .stage { position: sticky; top: 0; z-index: 10; order: -1; margin: 0 -16px; padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
     .frame { padding: 12px; min-height: 0; }
     .canvas img { max-height: 28vh; }
+    .canvas img.logo { height: 24vh; }
     .top { padding: 0 16px; }
     .top nav a:not(:last-child) { display: none; }
   }
@@ -344,7 +352,7 @@
 <header class="top">
   <a class="brand" href="https://github.com/cartiqolabs" aria-label="CARTIQO Labs on GitHub">
     <span class="mark" id="mark"></span>
-    <span class="name">Banner maker</span>
+    <span class="name">Banners and logos</span>
   </a>
   <nav>
     <a href="https://github.com/cartiqolabs/.github/tree/main/docs">Source</a>
@@ -354,7 +362,57 @@
 
 <main class="app">
   <form class="panel" id="form" autocomplete="off" onsubmit="return false">
-    <fieldset>
+    <fieldset class="mode">
+      <div class="segmented" role="radiogroup" aria-label="What to make">
+        <label><input type="radio" name="mode" data-key="mode" value="banner"><span>Banner</span></label>
+        <label><input type="radio" name="mode" data-key="mode" value="logo"><span>Logo</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset data-when="mode:logo" hidden>
+      <legend>Logo</legend>
+      <div class="segmented" role="radiogroup" aria-label="Logo type">
+        <label><input type="radio" name="logoType" data-key="logoType" value="wordmark"><span>Wordmark</span></label>
+        <label><input type="radio" name="logoType" data-key="logoType" value="icon"><span>Icon</span></label>
+        <label><input type="radio" name="logoType" data-key="logoType" value="lockup"><span>With motto</span></label>
+      </div>
+      <div class="field">
+        <label for="logo-size" id="logo-size-label">Height in pixels</label>
+        <input type="number" id="logo-size" data-key="logoSize" min="16" max="4096" step="1" inputmode="numeric">
+        <div class="sizes" id="logo-sizes" aria-label="Common sizes"></div>
+      </div>
+      <div class="field">Background
+        <div class="segmented" role="radiogroup" aria-label="Logo background">
+          <label><input type="radio" name="logoBg" data-key="logoBg" value="none"><span>None</span></label>
+          <label><input type="radio" name="logoBg" data-key="logoBg" value="solid"><span>Solid</span></label>
+          <label><input type="radio" name="logoBg" data-key="logoBg" value="gradient"><span>Gradient</span></label>
+        </div>
+      </div>
+      <div class="group" data-when="logoBg:gradient" hidden>
+        <div class="field">
+          <span class="label-row">Fades to <button type="button" class="link-button bg2-auto">Use automatic</button></span>
+          <button type="button" class="color-button" data-color="bg2"></button>
+        </div>
+        <label>Direction
+          <span class="range"><input type="range" data-key="angle" min="0" max="360" step="5"><output data-out="angle" data-unit="°"></output></span>
+        </label>
+      </div>
+      <div class="field" data-when="logoBg:!none" hidden>Shape
+        <div class="segmented" role="radiogroup" aria-label="Shape">
+          <label><input type="radio" name="shape" data-key="shape" value="square"><span>Square</span></label>
+          <label><input type="radio" name="shape" data-key="shape" value="rounded"><span>Rounded</span></label>
+          <label data-when="logoType:icon" hidden><input type="radio" name="shape" data-key="shape" value="circle"><span>Circle</span></label>
+        </div>
+      </div>
+      <label data-when="logoBg:!none,shape:rounded" hidden>Corner radius
+        <span class="range"><input type="range" data-key="radius" min="4" max="50" step="1"><output data-out="radius" data-unit="%"></output></span>
+      </label>
+      <label>Padding
+        <span class="range"><input type="range" data-key="padding" min="0" max="40" step="1"><output data-out="padding" data-unit="%"></output></span>
+      </label>
+    </fieldset>
+
+    <fieldset data-when="mode:banner">
       <legend>Size</legend>
       <label>Format
         <select data-key="size" id="size"></select>
@@ -367,13 +425,17 @@
 
     <fieldset>
       <legend>Text</legend>
-      <label>Wordmark
+      <label data-when="mode:banner|logoType:wordmark|logoType:lockup">Wordmark
         <input type="text" class="caps" data-key="wordmark" spellcheck="false" maxlength="40">
         <span class="hint" id="wordmark-hint"></span>
       </label>
-      <label>Line above <input type="text" data-key="overline" spellcheck="false" maxlength="60"></label>
-      <label>Motto <input type="text" data-key="motto" spellcheck="false" maxlength="60"></label>
-      <div class="two">
+      <label data-when="mode:logo,logoType:icon" hidden>Icon letters
+        <input type="text" class="caps" data-key="mark" spellcheck="false" maxlength="6">
+        <span class="hint" id="mark-hint"></span>
+      </label>
+      <label data-when="mode:banner|logoType:lockup">Line above <input type="text" data-key="overline" spellcheck="false" maxlength="60"></label>
+      <label data-when="mode:banner|logoType:lockup">Motto <input type="text" data-key="motto" spellcheck="false" maxlength="60"></label>
+      <div class="two" data-when="mode:banner|logoType:lockup">
         <label>Font for the lines
           <select data-key="font">
             <option value="sans">Sans</option>
@@ -400,7 +462,7 @@
       </div>
     </fieldset>
 
-    <fieldset>
+    <fieldset data-when="mode:banner">
       <legend>Background</legend>
       <div class="segmented" role="radiogroup" aria-label="Fill">
         <label><input type="radio" name="fill" data-key="fill" value="solid"><span>Solid</span></label>
@@ -411,7 +473,7 @@
 
       <div class="group" data-when="fill:gradient" hidden>
         <div class="field">
-          <span class="label-row">Fades to <button type="button" class="link-button" id="bg2-auto">Use automatic</button></span>
+          <span class="label-row">Fades to <button type="button" class="link-button bg2-auto">Use automatic</button></span>
           <button type="button" class="color-button" data-color="bg2"></button>
         </div>
         <label>Direction
@@ -475,12 +537,12 @@
 
     <fieldset>
       <legend>Layout</legend>
-      <div class="segmented" role="radiogroup" aria-label="Alignment">
+      <div class="segmented" role="radiogroup" aria-label="Alignment" data-when="mode:banner">
         <label><input type="radio" name="align" data-key="align" value="left"><span>Left</span></label>
         <label><input type="radio" name="align" data-key="align" value="center"><span>Centre</span></label>
         <label><input type="radio" name="align" data-key="align" value="right"><span>Right</span></label>
       </div>
-      <label>Content size
+      <label data-when="mode:banner">Content size
         <span class="range"><input type="range" data-key="scale" min="50" max="150" step="5"><output data-out="scale" data-unit="%"></output></span>
       </label>
       <label>Stroke weight
@@ -490,9 +552,9 @@
         <span class="range"><input type="range" data-key="tracking" min="-4" max="16" step="1"><output data-out="tracking" data-unit=""></output></span>
       </label>
       <div class="checks">
-        <label class="check"><input type="checkbox" data-key="corners"> Corner marks</label>
-        <label class="check"><input type="checkbox" data-key="rule"> Divider</label>
-        <label class="check"><input type="checkbox" data-key="border"> Border</label>
+        <label class="check" data-when="mode:banner"><input type="checkbox" data-key="corners"> Corner marks</label>
+        <label class="check" data-when="mode:banner|logoType:lockup"><input type="checkbox" data-key="rule"> Divider</label>
+        <label class="check" data-when="mode:banner"><input type="checkbox" data-key="border"> Border</label>
         <label class="check" id="safe-toggle"><input type="checkbox" data-key="safeGuide"> Show safe area</label>
       </div>
     </fieldset>
@@ -597,7 +659,22 @@ function start() {
     border: true,
     safeGuide: true,
     pngScale: 2,
+    mode: 'banner',
+    logoType: 'wordmark',
+    mark: 'C.',
+    logoBg: 'none',
+    shape: 'rounded',
+    radius: 22,
+    padding: 12,
+    logoSize: 256,
   };
+  // Each logo type starts from its usual background and padding.
+  const LOGO_TYPES = {
+    wordmark: { name: 'Wordmark', logoBg: 'none', padding: 12 },
+    icon: { name: 'Icon', logoBg: 'solid', padding: 24 },
+    lockup: { name: 'Wordmark with motto', logoBg: 'none', padding: 12 },
+  };
+  const LOGO_SIZES = [64, 128, 256, 512, 1024];
   const state = Object.assign({}, DEFAULTS, readHash());
   let image = null; // a data: URL, never put in the link
 
@@ -677,8 +754,41 @@ function start() {
     };
   }
 
+  function logoOptions() {
+    return {
+      type: state.logoType,
+      wordmark: state.wordmark,
+      mark: state.mark,
+      overline: state.overline,
+      motto: state.motto,
+      font: state.font,
+      caps: state.caps,
+      theme: state.theme,
+      bg: state.bg,
+      ink: state.ink,
+      accent: state.accent,
+      background: state.logoBg,
+      bg2: state.bg2 || null,
+      angle: state.angle,
+      shape: state.shape,
+      radius: state.radius / 100,
+      padding: state.padding / 100,
+      size: state.logoSize,
+      weight: state.weight,
+      tracking: state.tracking,
+      rule: state.rule,
+      measure: measure,
+    };
+  }
+
   function currentSvg() {
-    return B.render(options());
+    return state.mode === 'logo' ? B.renderLogo(logoOptions()) : B.render(options());
+  }
+
+  // Logos get their width from their content, so the size comes from the SVG.
+  function sizeOf(svg) {
+    const m = /width="(\d+)" height="(\d+)"/.exec(svg);
+    return { width: Number(m[1]), height: Number(m[2]) };
   }
 
   function theme() {
@@ -693,9 +803,11 @@ function start() {
     return B.mix(theme().bg, accentColour(), 0.35);
   }
 
-  function fileName(ext, scale) {
-    const slug = state.wordmark.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'banner';
-    return slug + '-' + state.width + 'x' + state.height + '-' + state.theme + (scale > 1 ? '@' + scale + 'x' : '') + '.' + ext;
+  // e.g. cartiqo-1280x360-dark.png or cartiqo-icon-512x512-dark@2x.png
+  function fileName(ext, scale, size) {
+    const slug = state.wordmark.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cartiqo';
+    const kind = state.mode === 'logo' ? '-' + state.logoType : '';
+    return slug + kind + '-' + size.width + 'x' + size.height + '-' + state.theme + (scale > 1 ? '@' + scale + 'x' : '') + '.' + ext;
   }
 
   function save(blob, name) {
@@ -975,10 +1087,26 @@ function start() {
   customDot.addEventListener('click', function () {
     picker.open(customDot, accentColour, function (v) { state.accent = v; schedule(); });
   });
-  $('bg2-auto').addEventListener('click', function () {
-    state.bg2 = '';
-    picker.close(false);
-    schedule();
+  document.querySelectorAll('.bg2-auto').forEach(function (button) {
+    button.addEventListener('click', function () {
+      state.bg2 = '';
+      picker.close(false);
+      schedule();
+    });
+  });
+
+  const logoSizes = $('logo-sizes');
+  LOGO_SIZES.forEach(function (px) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = px;
+    b.dataset.px = px;
+    b.addEventListener('click', function () {
+      state.logoSize = px;
+      syncControls();
+      schedule();
+    });
+    logoSizes.appendChild(b);
   });
 
   function syncControls() {
@@ -1019,7 +1147,7 @@ function start() {
       button.innerHTML = '<span class="chip"></span><span class="hex">' + value + '</span>' + (auto ? '<span class="tag">Auto</span>' : '');
       button.querySelector('.chip').style.setProperty('--c', value);
     });
-    $('bg2-auto').hidden = !state.bg2;
+    document.querySelectorAll('.bg2-auto').forEach(function (b) { b.hidden = !state.bg2; });
 
     if (state.theme === 'custom') {
       const ratio = B.contrast(state.bg, state.ink);
@@ -1032,26 +1160,41 @@ function start() {
       out.textContent = state[out.dataset.out] + out.dataset.unit;
     });
 
-    // Groups that only matter for one choice, e.g. data-when="fill:gradient".
+    // Parts that only matter for some choices. data-when="fill:gradient" shows
+    // for one value, "logoBg:!none" for all but one; "," means and, "|" means or.
     form.querySelectorAll('[data-when]').forEach(function (el) {
-      const parts = el.dataset.when.split(':');
-      const not = parts[1][0] === '!';
-      const match = String(state[parts[0]]) === parts[1].replace('!', '');
-      el.hidden = not ? match : !match;
+      el.hidden = !el.dataset.when.split('|').some(function (any) {
+        return any.split(',').every(function (cond) {
+          const parts = cond.split(':');
+          const not = parts[1][0] === '!';
+          const match = String(state[parts[0]]) === parts[1].replace('!', '');
+          return not ? !match : match;
+        });
+      });
     });
 
     const p = preset();
-    $('safe-toggle').hidden = !(p && p.safe);
+    $('safe-toggle').hidden = !(state.mode === 'banner' && p && p.safe);
     $('image-hint').textContent = image ? 'Your image stays on this device and is not in shared links.' : 'Or drop an image on the preview. It stays on your device.';
     $('image-remove').hidden = !image;
     $('image-pick').textContent = image ? 'Change image' : 'Choose image';
 
-    const left = Array.from(new Set(Array.from(state.wordmark.toUpperCase()).filter(function (c) { return B.CHARACTERS.indexOf(c) < 0; })));
-    const hint = $('wordmark-hint');
-    hint.classList.toggle('warn', left.length > 0);
-    hint.textContent = left.length
-      ? 'The wordmark has no ' + left.join(' ') + ', so ' + (left.length > 1 ? 'they are' : 'it is') + ' left out.'
-      : "Letters, numbers, spaces and . - / ! '. A full stop becomes the dot.";
+    $('logo-size-label').textContent = state.logoType === 'icon' ? 'Width and height in pixels' : 'Height in pixels';
+    logoSizes.querySelectorAll('button').forEach(function (b) {
+      b.classList.toggle('on', Number(b.dataset.px) === state.logoSize);
+    });
+
+    hintFor(state.wordmark, $('wordmark-hint'), 'wordmark', "Letters, numbers, spaces and . - / ! '. A full stop becomes the dot.");
+    hintFor(state.mark, $('mark-hint'), 'icon', 'One to three characters work best. A full stop becomes the dot.');
+  }
+
+  // Says which characters the wordmark can't draw.
+  function hintFor(text, el, what, fallback) {
+    const left = Array.from(new Set(Array.from(text.toUpperCase()).filter(function (c) { return B.CHARACTERS.indexOf(c) < 0; })));
+    el.classList.toggle('warn', left.length > 0);
+    el.textContent = left.length
+      ? 'The ' + what + ' has no ' + left.join(' ') + ', so ' + (left.length > 1 ? 'they are' : 'it is') + ' left out.'
+      : fallback;
   }
 
   let previewUrl = null;
@@ -1061,14 +1204,18 @@ function start() {
     $('preview').src = url;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     previewUrl = url;
-    $('preview').alt = 'Banner preview, ' + state.width + ' by ' + state.height;
+    const size = sizeOf(svg);
+    const logo = state.mode === 'logo';
+    $('preview').alt = (logo ? 'Logo' : 'Banner') + ' preview, ' + size.width + ' by ' + size.height;
+    $('preview').classList.toggle('logo', logo);
+    $('preview').parentNode.classList.toggle('checker', logo);
 
     const p = preset();
-    $('format').textContent = p ? p.name : 'Custom size';
-    $('dims').textContent = state.width + ' × ' + state.height;
+    $('format').textContent = logo ? LOGO_TYPES[state.logoType].name : p ? p.name : 'Custom size';
+    $('dims').textContent = size.width + ' × ' + size.height;
 
     const safe = $('safe');
-    safe.hidden = !(p && p.safe && state.safeGuide);
+    safe.hidden = !(!logo && p && p.safe && state.safeGuide);
     if (p && p.safe) {
       safe.style.left = ((state.width - p.safe.width) / 2 / state.width * 100) + '%';
       safe.style.top = ((state.height - p.safe.height) / 2 / state.height * 100) + '%';
@@ -1116,6 +1263,17 @@ function start() {
       const from = B.THEMES[state.theme] || B.THEMES.dark;
       state.bg = from.bg;
       state.ink = from.ink;
+    }
+    if (key === 'logoSize') {
+      v = Math.round(v);
+      if (!(v >= 16 && v <= 4096)) return;
+    }
+    if (key === 'logoType' && v !== state.logoType) {
+      state.logoBg = LOGO_TYPES[v].logoBg;
+      state.padding = LOGO_TYPES[v].padding;
+      if (v !== 'icon' && state.shape === 'circle') state.shape = 'rounded';
+      state.logoType = v;
+      syncControls();
     }
     if (key === 'fill' && v === 'image' && !image) $('image-file').click();
     state[key] = v;
@@ -1183,25 +1341,28 @@ function start() {
   // Export
 
   $('download-svg').addEventListener('click', function () {
-    const name = fileName('svg', 1);
-    save(new Blob([currentSvg()], { type: 'image/svg+xml' }), name);
+    const svg = currentSvg();
+    const name = fileName('svg', 1, sizeOf(svg));
+    save(new Blob([svg], { type: 'image/svg+xml' }), name);
     say('Saved ' + name + '.');
   });
 
   $('download-png').addEventListener('click', function () {
     const scale = state.pngScale;
-    const url = URL.createObjectURL(new Blob([currentSvg()], { type: 'image/svg+xml' }));
+    const svg = currentSvg();
+    const size = sizeOf(svg);
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
     const img = new Image();
     img.onload = function () {
       const canvas = document.createElement('canvas');
-      canvas.width = state.width * scale;
-      canvas.height = state.height * scale;
+      canvas.width = size.width * scale;
+      canvas.height = size.height * scale;
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       try {
         canvas.toBlob(function (blob) {
           if (!blob) { say('That PNG is too big for this browser. Try 1× or a smaller size.'); return; }
-          const name = fileName('png', scale);
+          const name = fileName('png', scale, size);
           save(blob, name);
           say('Saved ' + name + '.');
         }, 'image/png');
@@ -1221,8 +1382,9 @@ function start() {
     copy(location.href, image ? 'Copied a link. Your image is not in it, so add it again after opening the link.' : 'Copied a link to this banner.');
   });
   $('reset').addEventListener('click', function () {
-    const size = { size: state.size, width: state.width, height: state.height };
-    Object.assign(state, DEFAULTS, size);
+    // Keeps what you are making and its size.
+    const keep = { mode: state.mode, size: state.size, width: state.width, height: state.height, logoType: state.logoType, logoSize: state.logoSize };
+    Object.assign(state, DEFAULTS, keep, { logoBg: LOGO_TYPES[keep.logoType].logoBg, padding: LOGO_TYPES[keep.logoType].padding });
     image = null;
     syncControls();
     update();

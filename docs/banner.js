@@ -115,6 +115,33 @@
     measure: null,
   };
 
+  const LOGO_TYPES = ['wordmark', 'icon', 'lockup'];
+
+  const LOGO_DEFAULTS = {
+    type: 'wordmark', // wordmark, icon, or lockup (wordmark with the two lines)
+    wordmark: DEFAULTS.wordmark,
+    mark: 'C.', // what the icon shows
+    overline: DEFAULTS.overline,
+    motto: DEFAULTS.motto,
+    font: 'sans',
+    caps: true,
+    theme: 'dark',
+    bg: null,
+    ink: null,
+    accent: 'cartiqo',
+    background: 'none', // none, solid or gradient
+    bg2: null,
+    angle: 135,
+    shape: 'rounded', // square, rounded, or circle for icons
+    radius: 0.22,
+    padding: 0.12,
+    size: 256, // the height, and the width of an icon
+    weight: 4,
+    tracking: 0,
+    rule: true,
+    measure: null,
+  };
+
   // Everything is laid out on the 1280 x 360 GitHub banner and scaled from there.
   const BASE_W = 1280;
   const BASE_H = 360;
@@ -324,6 +351,133 @@
     }
   }
 
+  // A linear gradient across the whole canvas, angled like CSS (0 is upwards).
+  function gradientDef(W, H, angle, from, to) {
+    const a = clamp(angle, -360, 720, 135) * Math.PI / 180;
+    const ux = Math.sin(a);
+    const uy = -Math.cos(a);
+    const len = (Math.abs(W * ux) + Math.abs(H * uy)) / 2;
+    return [
+      '<linearGradient id="ctq-fill" gradientUnits="userSpaceOnUse" x1="' + num(W / 2 - ux * len) + '" y1="' + num(H / 2 - uy * len) + '" x2="' + num(W / 2 + ux * len) + '" y2="' + num(H / 2 + uy * len) + '">',
+      '  <stop offset="0" stop-color="' + from + '"/>',
+      '  <stop offset="1" stop-color="' + to + '"/>',
+      '</linearGradient>',
+    ];
+  }
+
+  // Where the wordmark's strokes really start and end, in glyph units.
+  function inkBox(placed, weight) {
+    const half = weight / 2;
+    let left = Infinity;
+    let right = -Infinity;
+    let bottom = 47 + half;
+    placed.forEach(function (p) {
+      const g = GLYPHS[p.c];
+      if (!g.dot && !g.d.length) return;
+      const pad = g.dot ? 0 : half;
+      left = Math.min(left, p.x - pad);
+      right = Math.max(right, p.x + (p.c === 'Q' ? 32 : g.w) + pad);
+      if (p.c === 'Q') bottom = 49 + half;
+    });
+    if (left > right) { left = 0; right = 40; }
+    return { left: left, right: right, top: 7 - half, bottom: bottom };
+  }
+
+  // Logos: the wordmark on its own, an icon, or the wordmark with its lines.
+  // Wordmarks and lockups take `size` as their height and get as wide as they
+  // need; icons are `size` square.
+  function renderLogo(options) {
+    const o = Object.assign({}, LOGO_DEFAULTS, options);
+    const type = LOGO_TYPES.indexOf(o.type) >= 0 ? o.type : 'wordmark';
+    const t = resolveTheme(o);
+    const accent = resolveAccent(o.accent, t);
+    const weight = clamp(o.weight, 1, 10, 4);
+    const size = Math.round(clamp(o.size, 16, 4096, 256));
+    const padding = clamp(o.padding, 0, 0.45, 0.12);
+    const text = type === 'icon' ? o.mark : o.wordmark;
+    const wm = layoutWordmark(text, clamp(o.tracking, -6, 40, 0));
+    const box = inkBox(wm.placed, weight);
+    const stroke = 'fill="none" stroke="' + t.ink + '" stroke-width="' + num(weight) + '" stroke-linecap="round" stroke-linejoin="round"';
+    const body = [];
+    let W;
+    let H;
+    let label;
+
+    if (type === 'lockup') {
+      // The banner's centre block without the frame, cropped to its ink.
+      const font = FONTS[o.font] || FONTS.sans;
+      const measure = o.measure || estimate;
+      const caps = o.caps !== false;
+      const line = function (s) { s = String(s || '').trim(); return caps ? s.toUpperCase() : s; };
+      const overline = line(o.overline);
+      const motto = line(o.motto);
+      const S = WORDMARK_SCALE;
+      const cx = BASE_W / 2;
+      const inkWidth = wm.placed.length ? (box.right - box.left) * S : 0;
+      const overlineWidth = overline ? measure(overline, 13, 5.2, font) - 5.2 : 0;
+      const mottoWidth = motto ? measure(motto, 18, 6.4, font) - 6.4 : 0;
+      const ruleWidth = Math.max(inkWidth, mottoWidth);
+      const blockWidth = Math.max(inkWidth, overlineWidth, mottoWidth, 1);
+      // Without the divider the motto moves up into its space.
+      const mottoY = o.rule ? 311 : 287;
+      const top = overline ? 68.6 : 118 + box.top * S;
+      const bottom = motto ? mottoY + (caps ? 0 : 4) : o.rule ? 272.5 : 118 + box.bottom * S;
+      H = size;
+      const pad = padding * H;
+      const k = Math.max(0.01, H - 2 * pad) / (bottom - top);
+      W = Math.max(1, Math.ceil(blockWidth * k + 2 * pad));
+      body.push('<g transform="translate(' + num(W / 2 - cx * k) + ' ' + num(pad - top * k) + ') scale(' + Math.round(k * 10000) / 10000 + ')">');
+      if (overline) body.push('  <text x="' + num(cx + 2.6) + '" y="78" fill="' + t.ink + '" fill-opacity="' + t.opacity.overline + '" font-family="' + esc(font) + '" font-size="13" font-weight="500" letter-spacing="5.2" text-anchor="middle">' + esc(overline) + '</text>');
+      if (wm.placed.length) {
+        body.push('  <g transform="translate(' + num(cx - (box.left + box.right) / 2 * S) + ' 118) scale(' + S + ')" ' + stroke + '>');
+        body.push.apply(body, wordmarkShapes(wm.placed, accent, '    '));
+        body.push('  </g>');
+      }
+      if (o.rule) body.push('  <path d="M' + num(cx - ruleWidth / 2) + ' 272 H' + num(cx + ruleWidth / 2) + '" stroke="' + t.ink + '" stroke-opacity="' + t.opacity.rule + '" stroke-width="1"/>');
+      if (motto) body.push('  <text x="' + num(cx + 3.2) + '" y="' + mottoY + '" fill="' + t.ink + '" fill-opacity="' + t.opacity.motto + '" font-family="' + esc(font) + '" font-size="18" font-weight="500" letter-spacing="6.4" text-anchor="middle">' + esc(motto) + '</text>');
+      body.push('</g>');
+      label = [String(o.wordmark || '').trim(), sentence(o.motto)].filter(Boolean).join(' ');
+    } else {
+      const inkWidth = box.right - box.left;
+      const inkHeight = box.bottom - box.top;
+      let k;
+      if (type === 'icon') {
+        W = H = size;
+        k = size * Math.max(0.05, 1 - 2 * padding) / Math.max(inkWidth, inkHeight);
+      } else {
+        H = size;
+        const pad = padding * H;
+        k = Math.max(0.01, H - 2 * pad) / inkHeight;
+        W = Math.max(1, Math.ceil(inkWidth * k + 2 * pad));
+      }
+      body.push('<g transform="translate(' + num(W / 2 - (box.left + box.right) / 2 * k) + ' ' + num(H / 2 - (box.top + box.bottom) / 2 * k) + ') scale(' + Math.round(k * 10000) / 10000 + ')" ' + stroke + '>');
+      body.push.apply(body, wordmarkShapes(wm.placed, accent, '  '));
+      body.push('</g>');
+      label = String(text || '').trim();
+    }
+    label = label || 'CARTIQO';
+
+    const background = o.background === 'solid' || o.background === 'gradient' ? o.background : 'none';
+    const shape = o.shape === 'circle' && type === 'icon' ? 'circle' : o.shape === 'square' ? 'square' : 'rounded';
+    const fill = background === 'gradient' ? 'url(#ctq-fill)' : t.bg;
+
+    const s = [];
+    s.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">');
+    s.push('  <title>' + esc(label) + '</title>');
+    if (background === 'gradient') {
+      s.push('  <defs>');
+      gradientDef(W, H, o.angle, t.bg, hex(o.bg2, mix(t.bg, accent, 0.35))).forEach(function (d) { s.push('    ' + d); });
+      s.push('  </defs>');
+    }
+    if (background !== 'none') {
+      if (shape === 'circle') s.push('  <circle cx="' + num(W / 2) + '" cy="' + num(H / 2) + '" r="' + num(Math.min(W, H) / 2) + '" fill="' + fill + '"/>');
+      else s.push('  <rect width="' + W + '" height="' + H + '"' + (shape === 'rounded' ? ' rx="' + num(clamp(o.radius, 0, 0.5, 0.22) * Math.min(W, H)) + '"' : '') + ' fill="' + fill + '"/>');
+    }
+    body.forEach(function (b) { s.push('  ' + b); });
+    s.push('</svg>');
+    return s.join('\n') + '\n';
+  }
+
   function render(options) {
     const o = Object.assign({}, DEFAULTS, options);
     if (o.grid === false) o.pattern = 'none';
@@ -384,16 +538,7 @@
     const patternId = 'ctq-grid-' + t.key;
 
     const defs = [];
-    if (fill === 'gradient') {
-      const a = clamp(o.angle, -360, 720, 135) * Math.PI / 180;
-      const ux = Math.sin(a);
-      const uy = -Math.cos(a);
-      const len = (Math.abs(W * ux) + Math.abs(H * uy)) / 2;
-      defs.push('<linearGradient id="ctq-fill" gradientUnits="userSpaceOnUse" x1="' + num(W / 2 - ux * len) + '" y1="' + num(H / 2 - uy * len) + '" x2="' + num(W / 2 + ux * len) + '" y2="' + num(H / 2 + uy * len) + '">');
-      defs.push('  <stop offset="0" stop-color="' + t.bg + '"/>');
-      defs.push('  <stop offset="1" stop-color="' + hex(o.bg2, mix(t.bg, accent, 0.35)) + '"/>');
-      defs.push('</linearGradient>');
-    }
+    if (fill === 'gradient') defs.push.apply(defs, gradientDef(W, H, o.angle, t.bg, hex(o.bg2, mix(t.bg, accent, 0.35))));
     if (fill === 'glow') {
       const at = GLOW_AT[o.glowAt] || GLOW_AT.centre;
       const r = Math.max(W, H) * (o.glowAt === 'centre' || !GLOW_AT[o.glowAt] ? 0.5 : 0.65);
@@ -528,6 +673,7 @@
 
   const api = {
     render: render,
+    renderLogo: renderLogo,
     wordmark: wordmark,
     layoutWordmark: layoutWordmark,
     resolveTheme: resolveTheme,
@@ -540,6 +686,8 @@
     FONTS: FONTS,
     PATTERNS: PATTERNS,
     DEFAULTS: DEFAULTS,
+    LOGO_TYPES: LOGO_TYPES,
+    LOGO_DEFAULTS: LOGO_DEFAULTS,
     CHARACTERS: Object.keys(GLYPHS).join(''),
   };
   if (typeof module === 'object' && module.exports) module.exports = api;

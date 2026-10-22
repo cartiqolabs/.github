@@ -48,7 +48,7 @@ TypeScript from end to end. React for every product, deployed per domain on Clou
 
 ## Tools
 
-- [Banner maker](https://cartiqolabs.github.io/.github/): makes CARTIQO banners like the one at the top of this page, in the sizes GitHub, Discord, X, LinkedIn and YouTube want.
+- [Banners and logos](https://cartiqolabs.github.io/.github/): makes CARTIQO banners like the one at the top of this page, in the sizes GitHub, Discord, X, LinkedIn and YouTube want, plus the CARTIQO wordmark and icon as logos.
 
 ## Open source
 
