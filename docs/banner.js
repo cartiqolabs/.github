@@ -112,6 +112,10 @@
     corners: true,
     rule: true,
     border: true,
+    animate: 'none', // none, draw, rise or type
+    duration: 4, // seconds for one loop
+    loop: true, // false plays once and stops on the finished wordmark
+    frame: null, // 0 to 1 through the loop draws that moment as a still
     measure: null,
   };
 
@@ -130,6 +134,10 @@
     ink: null,
     accent: 'cartiqo',
     background: 'none', // none, solid or gradient
+    pattern: 'none', // drawn over a solid or gradient background
+    patternSize: 1,
+    patternStrength: 1,
+    grain: 0,
     bg2: null,
     angle: 135,
     shape: 'rounded', // square, rounded, or circle for icons
@@ -139,6 +147,10 @@
     weight: 4,
     tracking: 0,
     rule: true,
+    animate: 'none',
+    duration: 4,
+    loop: true,
+    frame: null,
     measure: null,
   };
 
@@ -310,14 +322,112 @@
     return { placed: placed, width: last ? x + last.w + (last.r || 0) + GAP : 0 };
   }
 
-  function wordmarkShapes(placed, accent, indent) {
+  function wordmarkShapes(placed, accent, indent, a) {
     const out = [];
-    placed.forEach(function (p) {
+    placed.forEach(function (p, i) {
       const g = GLYPHS[p.c];
-      if (g.dot) out.push(indent + '<circle cx="' + num(p.x + 4) + '" cy="43" r="4" fill="' + accent + '" stroke="none"/>');
-      else g.d.forEach(function (d) { out.push(indent + '<path d="' + shift(d, p.x) + '"/>'); });
+      const dot = '<circle cx="' + num(p.x + 4) + '" cy="43" r="4" fill="' + accent + '" stroke="none"/>';
+      if (!a) {
+        if (g.dot) out.push(indent + dot);
+        else g.d.forEach(function (d) { out.push(indent + '<path d="' + shift(d, p.x) + '"/>'); });
+        return;
+      }
+      const n = placed.length;
+      const draws = a.kind === 'draw' && !g.dot;
+      // Dashes restart on every subpath, so each stroke is drawn as its own path.
+      // Hidden strokes start a little past the dash, or round caps leave a dot.
+      const strokes = draws ? [].concat.apply([], g.d.map(function (d) { return d.split(/(?=M)/); })) : g.d;
+      const paths = g.dot ? [dot] : strokes.map(function (d) {
+        if (!draws) return '<path d="' + shift(d, p.x) + '"/>';
+        const m = motion(a, i, n, 'stroke-dashoffset', 1.05, 0);
+        return '<path d="' + shift(d.trim(), p.x) + '" pathLength="1" stroke-dasharray="1 2" stroke-dashoffset="' + num(m.value) + '">' + m.tag + '</path>';
+      });
+      let attrs = '';
+      let tags = '';
+      if (!draws) {
+        const fade = motion(a, i, n, 'opacity', 0, 1);
+        attrs += ' opacity="' + op(fade.value) + '"';
+        tags += fade.tag;
+      }
+      if (a.kind === 'rise') {
+        const lift = motion(a, i, n, 'transform', 14, 0);
+        attrs += ' transform="translate(0 ' + num(lift.value) + ')"';
+        tags += lift.tag;
+      }
+      const wrap = attrs || tags;
+      out.push(indent + (wrap ? '<g' + attrs + '>' + tags : '') + paths.join('') + (wrap ? '</g>' : ''));
     });
     return out;
+  }
+
+  // Animations run over a loop: a beat of nothing, the letters come in one
+  // after another, a hold, then they all go together. Played once, they stop
+  // as the last letter lands. A frame draws one moment of the loop as a still.
+  const ANIMATIONS = ['none', 'draw', 'rise', 'type'];
+  const LOOP = { start: 0.08, end: 0.5, out: 0.86, gone: 0.95 };
+  const EASE = [0.65, 0, 0.35, 1];
+
+  function animationOf(o) {
+    if (ANIMATIONS.indexOf(o.animate) < 1) return null;
+    return {
+      kind: o.animate,
+      once: o.loop === false,
+      seconds: clamp(o.duration, 1, 30, 4),
+      frame: o.frame == null ? null : clamp(o.frame, 0, 1, 1),
+    };
+  }
+
+  function bezier(t, p1, p2) {
+    const u = 1 - t;
+    return 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t;
+  }
+
+  function ease(x) {
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 30; i++) {
+      const mid = (lo + hi) / 2;
+      if (bezier(mid, EASE[0], EASE[2]) < x) lo = mid; else hi = mid;
+    }
+    return bezier((lo + hi) / 2, EASE[1], EASE[3]);
+  }
+
+  function sample(times, values, t) {
+    for (let i = 1; i < times.length; i++) {
+      if (t <= times[i]) {
+        const span = times[i] - times[i - 1];
+        const u = span > 0 ? ease((t - times[i - 1]) / span) : 1;
+        return values[i - 1] + (values[i] - values[i - 1]) * u;
+      }
+    }
+    return values[values.length - 1];
+  }
+
+  // One letter's value going from `from` to `to`: the still value for a frame
+  // (or the finished value), and the SMIL that animates it.
+  function motion(a, i, n, attr, from, to) {
+    const span = LOOP.end - LOOP.start;
+    const len = span * (a.kind === 'type' ? 0.1 : a.kind === 'draw' ? 0.5 : 0.4);
+    const start = LOOP.start + (n > 1 ? (span - len) / (n - 1) * i : 0);
+    const times = [0, start, start + len, LOOP.out, LOOP.gone, 1];
+    const values = [from, from, to, to, from, from];
+    if (a.frame != null) return { value: sample(times, values, a.frame), tag: '' };
+    let ts = times;
+    let vs = values;
+    if (a.once) {
+      ts = times.slice(0, 3).map(function (x) { return x / LOOP.end; });
+      vs = values.slice(0, 3);
+      if (ts[2] < 0.9999) { ts.push(1); vs.push(to); } else ts[2] = 1;
+    }
+    const transform = attr === 'transform';
+    const list = vs.map(function (v) { return transform ? '0 ' + num(v) : num(v); }).join(';');
+    const common = ' values="' + list + '" dur="' + num(a.once ? a.seconds * LOOP.end : a.seconds) + 's" ' +
+      (a.once ? 'fill="freeze"' : 'repeatCount="indefinite"') +
+      ' keyTimes="' + ts.map(function (x) { return Math.round(x * 10000) / 10000; }).join(';') + '" calcMode="spline" keySplines="' + ts.slice(1).map(function () { return EASE.join(' '); }).join(';') + '"';
+    return {
+      value: to,
+      tag: transform ? '<animateTransform attributeName="transform" type="translate"' + common + '/>' : '<animate attributeName="' + attr + '"' + common + '/>',
+    };
   }
 
   // Rough width of letter-spaced text, used when no real measure is passed in.
@@ -430,7 +540,7 @@
       if (overline) body.push('  <text x="' + num(cx + 2.6) + '" y="78" fill="' + t.ink + '" fill-opacity="' + t.opacity.overline + '" font-family="' + esc(font) + '" font-size="13" font-weight="500" letter-spacing="5.2" text-anchor="middle">' + esc(overline) + '</text>');
       if (wm.placed.length) {
         body.push('  <g transform="translate(' + num(cx - (box.left + box.right) / 2 * S) + ' 118) scale(' + S + ')" ' + stroke + '>');
-        body.push.apply(body, wordmarkShapes(wm.placed, accent, '    '));
+        body.push.apply(body, wordmarkShapes(wm.placed, accent, '    ', animationOf(o)));
         body.push('  </g>');
       }
       if (o.rule) body.push('  <path d="M' + num(cx - ruleWidth / 2) + ' 272 H' + num(cx + ruleWidth / 2) + '" stroke="' + t.ink + '" stroke-opacity="' + t.opacity.rule + '" stroke-width="1"/>');
@@ -451,7 +561,7 @@
         W = Math.max(1, Math.ceil(inkWidth * k + 2 * pad));
       }
       body.push('<g transform="translate(' + num(W / 2 - (box.left + box.right) / 2 * k) + ' ' + num(H / 2 - (box.top + box.bottom) / 2 * k) + ') scale(' + Math.round(k * 10000) / 10000 + ')" ' + stroke + '>');
-      body.push.apply(body, wordmarkShapes(wm.placed, accent, '  '));
+      body.push.apply(body, wordmarkShapes(wm.placed, accent, '  ', animationOf(o)));
       body.push('</g>');
       label = String(text || '').trim();
     }
@@ -460,18 +570,33 @@
     const background = o.background === 'solid' || o.background === 'gradient' ? o.background : 'none';
     const shape = o.shape === 'circle' && type === 'icon' ? 'circle' : o.shape === 'square' ? 'square' : 'rounded';
     const fill = background === 'gradient' ? 'url(#ctq-fill)' : t.bg;
+    const pattern = background !== 'none' && PATTERNS.indexOf(o.pattern) >= 0 ? o.pattern : 'none';
+    const grain = background !== 'none' ? clamp(o.grain, 0, 1, 0) : 0;
+    // Patterns scale with the logo the way they scale with a 360 high banner.
+    const cell = 40 * Math.min(W, H) / BASE_H * clamp(o.patternSize, 0.25, 4, 1) * (pattern === 'diagonal' ? 0.5 : 1);
+    const plate = function (paint, extra) {
+      if (shape === 'circle') return '  <circle cx="' + num(W / 2) + '" cy="' + num(H / 2) + '" r="' + num(Math.min(W, H) / 2) + '" fill="' + paint + '"' + (extra || '') + '/>';
+      return '  <rect width="' + W + '" height="' + H + '"' + (shape === 'rounded' ? ' rx="' + num(clamp(o.radius, 0, 0.5, 0.22) * Math.min(W, H)) + '"' : '') + ' fill="' + paint + '"' + (extra || '') + '/>';
+    };
 
     const s = [];
     s.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">');
     s.push('  <title>' + esc(label) + '</title>');
-    if (background === 'gradient') {
+    if (background === 'gradient' || pattern !== 'none' || grain) {
       s.push('  <defs>');
-      gradientDef(W, H, o.angle, t.bg, hex(o.bg2, mix(t.bg, accent, 0.35))).forEach(function (d) { s.push('    ' + d); });
+      if (background === 'gradient') gradientDef(W, H, o.angle, t.bg, hex(o.bg2, mix(t.bg, accent, 0.35))).forEach(function (d) { s.push('    ' + d); });
+      if (pattern !== 'none') {
+        s.push('    <pattern id="ctq-logo-pattern" width="' + num(cell) + '" height="' + num(cell) + '" patternUnits="userSpaceOnUse">');
+        s.push('      ' + patternTile(pattern, cell, t.ink, t.opacity.grid * clamp(o.patternStrength, 0, 10, 1)));
+        s.push('    </pattern>');
+      }
+      if (grain) s.push('    <filter id="ctq-logo-grain" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComposite in2="SourceGraphic" operator="in"/></filter>');
       s.push('  </defs>');
     }
     if (background !== 'none') {
-      if (shape === 'circle') s.push('  <circle cx="' + num(W / 2) + '" cy="' + num(H / 2) + '" r="' + num(Math.min(W, H) / 2) + '" fill="' + fill + '"/>');
-      else s.push('  <rect width="' + W + '" height="' + H + '"' + (shape === 'rounded' ? ' rx="' + num(clamp(o.radius, 0, 0.5, 0.22) * Math.min(W, H)) + '"' : '') + ' fill="' + fill + '"/>');
+      s.push(plate(fill));
+      if (pattern !== 'none') s.push(plate('url(#ctq-logo-pattern)'));
+      if (grain) s.push('  <g opacity="' + op(grain * 0.3) + '">' + plate('#000', ' filter="url(#ctq-logo-grain)"').trim() + '</g>');
     }
     body.forEach(function (b) { s.push('  ' + b); });
     s.push('</svg>');
@@ -644,7 +769,7 @@
     }
     if (wm.placed.length) {
       s.push(pad + '<g transform="translate(' + num(wmX) + ' 118) scale(' + WORDMARK_SCALE + ')" fill="none" stroke="' + t.ink + '" stroke-width="' + num(weight) + '" stroke-linecap="round" stroke-linejoin="round">');
-      s.push.apply(s, wordmarkShapes(wm.placed, accent, pad + '  '));
+      s.push.apply(s, wordmarkShapes(wm.placed, accent, pad + '  ', animationOf(o)));
       s.push(pad + '</g>');
       s.push('');
     }
@@ -689,6 +814,8 @@
     LOGO_TYPES: LOGO_TYPES,
     LOGO_DEFAULTS: LOGO_DEFAULTS,
     CHARACTERS: Object.keys(GLYPHS).join(''),
+    ANIMATIONS: ANIMATIONS,
+    ANIMATION_END: LOOP.end,
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.CartiqoBanner = api;

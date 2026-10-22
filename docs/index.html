@@ -445,6 +445,20 @@
         </label>
         <label class="check" style="height:36px"><input type="checkbox" data-key="caps"> All caps</label>
       </div>
+      <div class="two">
+        <label>Animation
+          <select data-key="animate">
+            <option value="none">None</option>
+            <option value="draw">Draw the strokes</option>
+            <option value="rise">Rise letter by letter</option>
+            <option value="type">Type letter by letter</option>
+          </select>
+        </label>
+        <label data-when="animate:!none" hidden>Loop length
+          <span class="range"><input type="range" data-key="duration" min="2" max="10" step="0.5"><output data-out="duration" data-unit="s"></output></span>
+        </label>
+      </div>
+      <span class="hint" data-when="animate:!none" hidden>The preview loops. SVG and video play once and stop on the finished wordmark, PNG is the finished frame.</span>
     </fieldset>
 
     <fieldset>
@@ -462,16 +476,16 @@
       </div>
     </fieldset>
 
-    <fieldset data-when="mode:banner">
+    <fieldset data-when="mode:banner|logoBg:!none">
       <legend>Background</legend>
-      <div class="segmented" role="radiogroup" aria-label="Fill">
+      <div class="segmented" role="radiogroup" aria-label="Fill" data-when="mode:banner">
         <label><input type="radio" name="fill" data-key="fill" value="solid"><span>Solid</span></label>
         <label><input type="radio" name="fill" data-key="fill" value="gradient"><span>Gradient</span></label>
         <label><input type="radio" name="fill" data-key="fill" value="glow"><span>Glow</span></label>
         <label><input type="radio" name="fill" data-key="fill" value="image"><span>Image</span></label>
       </div>
 
-      <div class="group" data-when="fill:gradient" hidden>
+      <div class="group" data-when="mode:banner,fill:gradient" hidden>
         <div class="field">
           <span class="label-row">Fades to <button type="button" class="link-button bg2-auto">Use automatic</button></span>
           <button type="button" class="color-button" data-color="bg2"></button>
@@ -481,7 +495,7 @@
         </label>
       </div>
 
-      <div class="group" data-when="fill:glow" hidden>
+      <div class="group" data-when="mode:banner,fill:glow" hidden>
         <label>Strength
           <span class="range"><input type="range" data-key="glow" min="5" max="100" step="5"><output data-out="glow" data-unit="%"></output></span>
         </label>
@@ -497,7 +511,7 @@
         <span class="hint">The glow uses the dot colour.</span>
       </div>
 
-      <div class="group" data-when="fill:image" hidden>
+      <div class="group" data-when="mode:banner,fill:image" hidden>
         <div class="two">
           <button type="button" id="image-pick">Choose image</button>
           <button type="button" id="image-remove">Remove</button>
@@ -570,6 +584,7 @@
       </div>
       <div class="row">
         <button type="button" id="download-svg">SVG</button>
+        <button type="button" id="download-video" data-when="animate:!none" hidden>Video</button>
         <button type="button" id="copy-svg">Copy SVG</button>
         <button type="button" id="copy-link">Copy link</button>
       </div>
@@ -635,6 +650,8 @@ function start() {
     motto: B.DEFAULTS.motto,
     font: 'sans',
     caps: true,
+    animate: 'none',
+    duration: 4,
     theme: 'dark',
     bg: B.THEMES.dark.bg,
     ink: B.THEMES.dark.ink,
@@ -727,6 +744,8 @@ function start() {
       motto: state.motto,
       font: state.font,
       caps: state.caps,
+      animate: state.animate,
+      duration: state.duration,
       theme: state.theme,
       bg: state.bg,
       ink: state.ink,
@@ -763,11 +782,17 @@ function start() {
       motto: state.motto,
       font: state.font,
       caps: state.caps,
+      animate: state.animate,
+      duration: state.duration,
       theme: state.theme,
       bg: state.bg,
       ink: state.ink,
       accent: state.accent,
       background: state.logoBg,
+      pattern: state.pattern,
+      patternSize: state.patternSize / 100,
+      patternStrength: state.patternStrength / 100,
+      grain: state.grain / 100,
       bg2: state.bg2 || null,
       angle: state.angle,
       shape: state.shape,
@@ -781,8 +806,8 @@ function start() {
     };
   }
 
-  function currentSvg() {
-    return state.mode === 'logo' ? B.renderLogo(logoOptions()) : B.render(options());
+  function currentSvg(extra) {
+    return state.mode === 'logo' ? B.renderLogo(Object.assign(logoOptions(), extra)) : B.render(Object.assign(options(), extra));
   }
 
   // Logos get their width from their content, so the size comes from the SVG.
@@ -1341,7 +1366,7 @@ function start() {
   // Export
 
   $('download-svg').addEventListener('click', function () {
-    const svg = currentSvg();
+    const svg = currentSvg({ loop: false });
     const name = fileName('svg', 1, sizeOf(svg));
     save(new Blob([svg], { type: 'image/svg+xml' }), name);
     say('Saved ' + name + '.');
@@ -1349,7 +1374,7 @@ function start() {
 
   $('download-png').addEventListener('click', function () {
     const scale = state.pngScale;
-    const svg = currentSvg();
+    const svg = currentSvg({ animate: 'none' });
     const size = sizeOf(svg);
     const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
     const img = new Image();
@@ -1377,7 +1402,75 @@ function start() {
     img.src = url;
   });
 
-  $('copy-svg').addEventListener('click', function () { copy(currentSvg(), 'Copied the SVG.'); });
+  // Draws every frame up front, then plays them into a recorder at a steady
+  // rate. Timers rather than animation frames keep it going in a background tab.
+  // Video has no transparency, so a see-through logo sits on its theme colour.
+  $('download-video').addEventListener('click', function () {
+    if (typeof MediaRecorder === 'undefined') { say('This browser cannot record video. Download the SVG instead.'); return; }
+    const button = $('download-video');
+    const scale = state.pngScale;
+    const fps = 30;
+    const count = Math.max(2, Math.round(state.duration * B.ANIMATION_END * fps));
+    const hold = Math.round(1.5 * fps);
+    const size = sizeOf(currentSvg());
+    const canvas = document.createElement('canvas');
+    canvas.width = size.width * scale;
+    canvas.height = size.height * scale;
+    const g = canvas.getContext('2d');
+    const backdrop = B.resolveTheme(state.mode === 'logo' ? logoOptions() : options()).bg;
+    const frames = [];
+    button.disabled = true;
+
+    function paint(frame) {
+      g.fillStyle = backdrop;
+      g.fillRect(0, 0, canvas.width, canvas.height);
+      g.drawImage(frame, 0, 0);
+    }
+
+    function load(i) {
+      if (i === count) { record(); return; }
+      say('Drawing frame ' + (i + 1) + ' of ' + count + '…');
+      const url = URL.createObjectURL(new Blob([currentSvg({ frame: i / (count - 1) * B.ANIMATION_END })], { type: 'image/svg+xml' }));
+      const img = new Image();
+      img.onload = function () {
+        createImageBitmap(img, { resizeWidth: canvas.width, resizeHeight: canvas.height }).then(function (bmp) {
+          URL.revokeObjectURL(url);
+          frames.push(bmp);
+          load(i + 1);
+        });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); button.disabled = false; say('A frame could not be drawn.'); };
+      img.src = url;
+    }
+
+    function record() {
+      const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(function (m) { return MediaRecorder.isTypeSupported(m); });
+      paint(frames[0]);
+      const recorder = new MediaRecorder(canvas.captureStream(fps), { mimeType: type, videoBitsPerSecond: 12e6 });
+      const chunks = [];
+      recorder.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
+      recorder.onstop = function () {
+        frames.forEach(function (f) { f.close(); });
+        button.disabled = false;
+        const name = fileName(/mp4/.test(type) ? 'mp4' : 'webm', scale, size);
+        save(new Blob(chunks, { type: type }), name);
+        say('Saved ' + name + '.');
+      };
+      say('Recording ' + Math.round((count + hold) / fps * 10) / 10 + ' seconds…');
+      recorder.start();
+      const started = performance.now();
+      (function tick() {
+        const i = Math.floor((performance.now() - started) / 1000 * fps);
+        if (i >= count + hold) { recorder.stop(); return; }
+        paint(frames[Math.min(i, count - 1)]);
+        setTimeout(tick, 1000 / fps / 2);
+      })();
+    }
+
+    load(0);
+  });
+
+  $('copy-svg').addEventListener('click', function () { copy(currentSvg({ loop: false }), 'Copied the SVG.'); });
   $('copy-link').addEventListener('click', function () {
     copy(location.href, image ? 'Copied a link. Your image is not in it, so add it again after opening the link.' : 'Copied a link to this banner.');
   });
