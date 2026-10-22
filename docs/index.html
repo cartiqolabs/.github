@@ -20,8 +20,10 @@
     --muted: rgba(244, 244, 246, 0.64);
     --faint: rgba(244, 244, 246, 0.42);
     --accent: #7C5CFF;
+    --accent-hover: #6A47FF;
     --on-accent: #FFFFFF;
     --focus: #9F8AFF;
+    --danger: #FF7A80;
     --radius: 8px;
     color-scheme: dark;
   }
@@ -36,6 +38,7 @@
       --muted: rgba(17, 17, 19, 0.66);
       --faint: rgba(17, 17, 19, 0.45);
       --focus: #6A47FF;
+      --danger: #D4232F;
       color-scheme: light;
     }
   }
@@ -96,7 +99,9 @@
     min-height: 320px;
     background-image: radial-gradient(var(--line) 1px, transparent 1px);
     background-size: 16px 16px;
+    transition: border-color 100ms;
   }
+  .frame.drop { border-color: var(--accent); border-style: dashed; }
   .canvas { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
   .canvas img {
     display: block;
@@ -123,9 +128,8 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 12px;
-    overflow: hidden;
   }
-  fieldset { border: 0; margin: 0; padding: 20px; display: grid; gap: 14px; }
+  fieldset { border: 0; margin: 0; padding: 20px; display: grid; gap: 14px; min-width: 0; }
   fieldset + fieldset { border-top: 1px solid var(--line); }
   legend {
     float: left;
@@ -138,10 +142,9 @@
     text-transform: uppercase;
     color: var(--faint);
   }
-  label, .field { display: grid; gap: 6px; font-size: 13px; font-weight: 500; }
+  label, .field { display: grid; gap: 6px; font-size: 13px; font-weight: 500; min-width: 0; }
   .hint { font-size: 12px; font-weight: 400; color: var(--muted); }
-  .hint.warn { color: #FF7A80; }
-  @media (prefers-color-scheme: light) { .hint.warn { color: #D4232F; } }
+  .hint.warn { color: var(--danger); }
 
   input[type=text], input[type=number], select {
     width: 100%;
@@ -159,39 +162,76 @@
   select { appearance: none; padding-right: 32px; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 17px) 15px, calc(100% - 12px) 15px; background-size: 5px 5px; background-repeat: no-repeat; }
   input:hover, select:hover { border-color: var(--faint); }
 
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+  .group { display: grid; gap: 14px; padding: 14px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--line); }
 
-  .segmented { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 3px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--line); }
-  .segmented label { display: block; position: relative; }
+  .segmented { display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; padding: 3px; gap: 3px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--line); }
+  .segmented label { display: block; position: relative; font-weight: 500; }
   .segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
   .segmented span { display: block; text-align: center; padding: 6px 0; border-radius: 6px; color: var(--muted); transition: background 100ms, color 100ms; }
   .segmented input:checked + span { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
   .segmented input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 1px; }
 
+  .themes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .theme { display: grid; gap: 4px; position: relative; font-weight: 400; font-size: 12px; color: var(--muted); text-align: center; }
+  .theme input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .theme .face {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    border-radius: var(--radius);
+    background: var(--bg-c);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    transition: box-shadow 100ms;
+  }
+  .theme .face svg { height: 14px; width: auto; }
+  .theme input:checked ~ .face { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+  .theme input:checked ~ .name { color: var(--ink); }
+  .theme input:focus-visible ~ .face { outline: 2px solid var(--focus); outline-offset: 4px; }
+
   .swatches { display: flex; flex-wrap: wrap; gap: 7px; }
   .swatch { position: relative; width: 24px; height: 24px; }
   .swatch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-  .swatch span {
+  .swatch span, .swatch-button {
     display: block;
     width: 24px;
     height: 24px;
+    padding: 0;
+    border: 0;
     border-radius: 50%;
     background: var(--c);
     box-shadow: inset 0 0 0 1px var(--line-strong);
   }
-  .swatch input:checked + span { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
+  .swatch input:checked + span, .swatch-button.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
   .swatch input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 4px; }
-  .swatch.custom span {
-    background: conic-gradient(#FF7A80, #F5B544, #4FD383, #38C9E0, #7D97FF, #B69BFF, #FF7A80);
+  .swatch-button { cursor: pointer; background: conic-gradient(#FF7A80, #F5B544, #4FD383, #38C9E0, #7D97FF, #B69BFF, #FF7A80); }
+  .swatch-button.on { background: var(--c); }
+  .swatch-button:hover { background-color: transparent; }
+
+  .color-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0 10px 0 8px;
+    background: var(--bg);
+    font: 400 12px/1 'Geist Mono', ui-monospace, monospace;
+    text-align: left;
   }
-  .swatch.custom.on span { background: var(--c); }
+  .color-button .chip { flex: none; width: 20px; height: 20px; border-radius: 5px; background: var(--c); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .color-button .hex { flex: 1; }
+  .color-button .tag { color: var(--faint); font-family: Geist, system-ui, sans-serif; }
+  .link-button { height: auto; padding: 0; border: 0; background: none; color: var(--muted); font-weight: 500; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
+  .link-button:hover { background: none; color: var(--ink); }
+  .label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 
   .range { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; }
-  .range output { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: var(--muted); min-width: 40px; text-align: right; }
-  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .range output { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: var(--muted); min-width: 44px; text-align: right; font-weight: 400; }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
 
   .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
-  .checks label { display: flex; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
+  .check { display: flex; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
   input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 
   .actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
@@ -210,8 +250,74 @@
   }
   button:hover { background: var(--surface-2); border-color: var(--faint); }
   button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-  button.primary:hover { background: #6A47FF; border-color: #6A47FF; }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
   .status { margin: 0; min-height: 20px; font-size: 13px; color: var(--muted); }
+
+  /* Colour picker */
+  .picker {
+    position: absolute;
+    z-index: 50;
+    width: 252px;
+    padding: 12px;
+    display: grid;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  }
+  .sv {
+    position: relative;
+    height: 150px;
+    border-radius: var(--radius);
+    cursor: crosshair;
+    touch-action: none;
+    background: linear-gradient(to top, #000, rgba(0, 0, 0, 0)), linear-gradient(to right, #FFF, var(--hue));
+  }
+  .hue {
+    position: relative;
+    height: 12px;
+    margin: 0 7px;
+    border-radius: 6px;
+    cursor: pointer;
+    touch-action: none;
+    background: linear-gradient(to right, #F00, #FF0, #0F0, #0FF, #00F, #F0F, #F00);
+  }
+  .hue::before { content: ''; position: absolute; inset: 0 -7px; border-radius: 6px; background: inherit; z-index: -1; }
+  .sv-handle, .hue-handle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border-radius: 50%;
+    border: 2px solid #FFF;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+  }
+  .sv-handle { background: var(--pick); }
+  .hue-handle { top: 50%; background: var(--hue); }
+  .picker-row { display: flex; gap: 8px; align-items: center; }
+  .picker-chip { flex: none; width: 36px; height: 32px; border-radius: 6px; background: var(--pick); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .hex-input {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: var(--bg);
+    font: 400 13px/1 'Geist Mono', ui-monospace, monospace;
+    color: var(--faint);
+  }
+  .hex-input:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .hex-input input { flex: 1; min-width: 0; border: 0; padding: 0; height: auto; background: none; color: var(--ink); font: inherit; text-transform: uppercase; outline: none; }
+  .picker-title { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-bottom: -6px; }
+  .picker-swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+  .picker-swatches button { width: 100%; height: auto; aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .picker-swatches button:hover { transform: scale(1.12); background: var(--c); }
 
   footer {
     padding: 20px 24px 28px;
@@ -222,10 +328,10 @@
   footer a { color: var(--muted); }
 
   @media (max-width: 960px) {
-    .app { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 16px; }
-    .stage { position: static; order: -1; }
-    .frame { padding: 16px; min-height: 0; }
-    .canvas img { max-height: 60vh; }
+    .app { grid-template-columns: minmax(0, 1fr); padding: 0 16px 16px; gap: 16px; }
+    .stage { position: sticky; top: 0; z-index: 10; order: -1; margin: 0 -16px; padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+    .frame { padding: 12px; min-height: 0; }
+    .canvas img { max-height: 28vh; }
     .top { padding: 0 16px; }
     .top nav a:not(:last-child) { display: none; }
   }
@@ -251,44 +357,143 @@
     <fieldset>
       <legend>Size</legend>
       <label>Format
-        <select id="size"></select>
+        <select data-key="size" id="size"></select>
       </label>
       <div class="two">
-        <label>Width <input type="number" id="width" min="100" max="6000" step="1" inputmode="numeric"></label>
-        <label>Height <input type="number" id="height" min="100" max="6000" step="1" inputmode="numeric"></label>
+        <label>Width <input type="number" data-key="width" min="100" max="6000" step="1" inputmode="numeric"></label>
+        <label>Height <input type="number" data-key="height" min="100" max="6000" step="1" inputmode="numeric"></label>
       </div>
     </fieldset>
 
     <fieldset>
       <legend>Text</legend>
       <label>Wordmark
-        <input type="text" class="caps" id="wordmark" spellcheck="false" maxlength="40">
-        <span class="hint" id="wordmark-hint">Letters, numbers, spaces and . - / ! '. A full stop becomes the dot.</span>
+        <input type="text" class="caps" data-key="wordmark" spellcheck="false" maxlength="40">
+        <span class="hint" id="wordmark-hint"></span>
       </label>
-      <label>Line above <input type="text" class="caps" id="overline" spellcheck="false" maxlength="60"></label>
-      <label>Motto <input type="text" class="caps" id="motto" spellcheck="false" maxlength="60"></label>
+      <label>Line above <input type="text" data-key="overline" spellcheck="false" maxlength="60"></label>
+      <label>Motto <input type="text" data-key="motto" spellcheck="false" maxlength="60"></label>
+      <div class="two">
+        <label>Font for the lines
+          <select data-key="font">
+            <option value="sans">Sans</option>
+            <option value="mono">Mono</option>
+            <option value="serif">Serif</option>
+          </select>
+        </label>
+        <label class="check" style="height:36px"><input type="checkbox" data-key="caps"> All caps</label>
+      </div>
     </fieldset>
 
     <fieldset>
-      <legend>Look</legend>
-      <div class="field">Theme
-        <div class="segmented" role="radiogroup" aria-label="Theme">
-          <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
-          <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+      <legend>Theme</legend>
+      <div class="themes" id="themes" role="radiogroup" aria-label="Theme"></div>
+      <div class="group" data-when="theme:custom">
+        <div class="two">
+          <div class="field">Background <button type="button" class="color-button" data-color="bg"></button></div>
+          <div class="field">Text <button type="button" class="color-button" data-color="ink"></button></div>
         </div>
+        <span class="hint" id="contrast"></span>
       </div>
       <div class="field">Dot colour
         <div class="swatches" id="swatches" role="radiogroup" aria-label="Dot colour"></div>
       </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Background</legend>
+      <div class="segmented" role="radiogroup" aria-label="Fill">
+        <label><input type="radio" name="fill" data-key="fill" value="solid"><span>Solid</span></label>
+        <label><input type="radio" name="fill" data-key="fill" value="gradient"><span>Gradient</span></label>
+        <label><input type="radio" name="fill" data-key="fill" value="glow"><span>Glow</span></label>
+        <label><input type="radio" name="fill" data-key="fill" value="image"><span>Image</span></label>
+      </div>
+
+      <div class="group" data-when="fill:gradient">
+        <div class="field">
+          <span class="label-row">Fades to <button type="button" class="link-button" id="bg2-auto">Use automatic</button></span>
+          <button type="button" class="color-button" data-color="bg2"></button>
+        </div>
+        <label>Direction
+          <span class="range"><input type="range" data-key="angle" min="0" max="360" step="5"><output data-out="angle" data-unit="°"></output></span>
+        </label>
+      </div>
+
+      <div class="group" data-when="fill:glow">
+        <label>Strength
+          <span class="range"><input type="range" data-key="glow" min="5" max="100" step="5"><output data-out="glow" data-unit="%"></output></span>
+        </label>
+        <label>Glow from
+          <select data-key="glowAt">
+            <option value="centre">Centre</option>
+            <option value="top">Top</option>
+            <option value="bottom">Bottom</option>
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+          </select>
+        </label>
+        <span class="hint">The glow uses the dot colour.</span>
+      </div>
+
+      <div class="group" data-when="fill:image">
+        <div class="two">
+          <button type="button" id="image-pick">Choose image</button>
+          <button type="button" id="image-remove">Remove</button>
+        </div>
+        <input type="file" id="image-file" accept="image/*" hidden>
+        <span class="hint" id="image-hint">Or drop an image on the preview. It stays on your device.</span>
+        <label>Darken
+          <span class="range"><input type="range" data-key="dim" min="0" max="100" step="5"><output data-out="dim" data-unit="%"></output></span>
+        </label>
+        <label>Blur
+          <span class="range"><input type="range" data-key="blur" min="0" max="30" step="1"><output data-out="blur" data-unit=""></output></span>
+        </label>
+      </div>
+
+      <label>Pattern
+        <select data-key="pattern">
+          <option value="grid">Grid</option>
+          <option value="dots">Dots</option>
+          <option value="crosses">Crosses</option>
+          <option value="lines">Lines</option>
+          <option value="diagonal">Diagonal</option>
+          <option value="none">None</option>
+        </select>
+      </label>
+      <div class="two" data-when="pattern:!none">
+        <label>Size
+          <span class="range"><input type="range" data-key="patternSize" min="50" max="250" step="10"><output data-out="patternSize" data-unit="%"></output></span>
+        </label>
+        <label>Strength
+          <span class="range"><input type="range" data-key="patternStrength" min="20" max="400" step="10"><output data-out="patternStrength" data-unit="%"></output></span>
+        </label>
+      </div>
+      <label>Grain
+        <span class="range"><input type="range" data-key="grain" min="0" max="100" step="5"><output data-out="grain" data-unit="%"></output></span>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Layout</legend>
+      <div class="segmented" role="radiogroup" aria-label="Alignment">
+        <label><input type="radio" name="align" data-key="align" value="left"><span>Left</span></label>
+        <label><input type="radio" name="align" data-key="align" value="center"><span>Centre</span></label>
+        <label><input type="radio" name="align" data-key="align" value="right"><span>Right</span></label>
+      </div>
       <label>Content size
-        <span class="range"><input type="range" id="scale" min="50" max="150" step="5"><output id="scale-out" for="scale"></output></span>
+        <span class="range"><input type="range" data-key="scale" min="50" max="150" step="5"><output data-out="scale" data-unit="%"></output></span>
+      </label>
+      <label>Stroke weight
+        <span class="range"><input type="range" data-key="weight" min="2" max="7" step="0.5"><output data-out="weight" data-unit=""></output></span>
+      </label>
+      <label>Letter spacing
+        <span class="range"><input type="range" data-key="tracking" min="-4" max="16" step="1"><output data-out="tracking" data-unit=""></output></span>
       </label>
       <div class="checks">
-        <label><input type="checkbox" id="grid"> Grid</label>
-        <label><input type="checkbox" id="corners"> Corner marks</label>
-        <label><input type="checkbox" id="rule"> Divider</label>
-        <label><input type="checkbox" id="border"> Border</label>
-        <label id="safe-toggle" hidden><input type="checkbox" id="safeGuide"> Show safe area</label>
+        <label class="check"><input type="checkbox" data-key="corners"> Corner marks</label>
+        <label class="check"><input type="checkbox" data-key="rule"> Divider</label>
+        <label class="check"><input type="checkbox" data-key="border"> Border</label>
+        <label class="check" id="safe-toggle"><input type="checkbox" data-key="safeGuide"> Show safe area</label>
       </div>
     </fieldset>
 
@@ -296,7 +501,7 @@
       <legend>Export</legend>
       <div class="actions">
         <button type="button" class="primary" id="download-png">Download PNG</button>
-        <select id="pngScale" aria-label="PNG scale">
+        <select data-key="pngScale" aria-label="PNG scale">
           <option value="1">1×</option>
           <option value="2">2×</option>
         </select>
@@ -306,12 +511,13 @@
         <button type="button" id="copy-svg">Copy SVG</button>
         <button type="button" id="copy-link">Copy link</button>
       </div>
+      <button type="button" id="reset">Start over</button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
     </fieldset>
   </form>
 
   <section class="stage" aria-label="Preview">
-    <div class="frame">
+    <div class="frame" id="frame">
       <div class="canvas">
         <img id="preview" alt="">
         <div class="safe" id="safe" hidden></div>
@@ -320,6 +526,19 @@
     <p class="meta"><span id="format"></span><b id="dims"></b></p>
   </section>
 </main>
+
+<div class="picker" id="picker" role="dialog" aria-label="Pick a colour" hidden>
+  <div class="sv" id="sv" tabindex="0" role="slider" aria-label="Saturation and brightness"><div class="sv-handle" id="sv-handle"></div></div>
+  <div class="hue" id="hue" tabindex="0" role="slider" aria-label="Hue" aria-valuemin="0" aria-valuemax="360"><div class="hue-handle" id="hue-handle"></div></div>
+  <div class="picker-row">
+    <span class="picker-chip"></span>
+    <label class="hex-input">#<input id="hex" maxlength="7" spellcheck="false" aria-label="Hex colour"></label>
+  </div>
+  <div class="picker-title">CARTIQO</div>
+  <div class="picker-swatches" id="picker-brand"></div>
+  <div class="picker-title" id="picker-recent-title" hidden>Recent</div>
+  <div class="picker-swatches" id="picker-recent" hidden></div>
+</div>
 
 <footer>
   Made by <a href="https://github.com/cartiqolabs">CARTIQO Labs</a>. The wordmark is drawn from the same strokes as the CARTIQO logo.
@@ -333,6 +552,7 @@
   const $ = function (id) { return document.getElementById(id); };
   const form = $('form');
 
+  // The defaults draw the banner on the CARTIQO Labs profile.
   const DEFAULTS = {
     size: 'github',
     width: 1280,
@@ -340,10 +560,27 @@
     wordmark: B.DEFAULTS.wordmark,
     overline: B.DEFAULTS.overline,
     motto: B.DEFAULTS.motto,
+    font: 'sans',
+    caps: true,
     theme: 'dark',
+    bg: B.THEMES.dark.bg,
+    ink: B.THEMES.dark.ink,
     accent: 'cartiqo',
+    fill: 'solid',
+    bg2: '',
+    angle: 135,
+    glow: 35,
+    glowAt: 'centre',
+    dim: 60,
+    blur: 0,
+    pattern: 'grid',
+    patternSize: 100,
+    patternStrength: 100,
+    grain: 0,
+    align: 'center',
+    weight: 4,
+    tracking: 0,
     scale: 100,
-    grid: true,
     corners: true,
     rule: true,
     border: true,
@@ -351,6 +588,7 @@
     pngScale: 2,
   };
   const state = Object.assign({}, DEFAULTS, readHash());
+  let image = null; // a data: URL, never put in the link
 
   // The link carries every setting that differs from the defaults.
   function readHash() {
@@ -361,9 +599,10 @@
       const v = params.get(key);
       const d = DEFAULTS[key];
       if (typeof d === 'boolean') out[key] = v === '1';
-      else if (typeof d === 'number') { if (isFinite(Number(v)) && v !== '') out[key] = Number(v); }
+      else if (typeof d === 'number') { if (v !== '' && isFinite(Number(v))) out[key] = Number(v); }
       else out[key] = v;
     });
+    if (params.get('grid') === '0') out.pattern = 'none';
     return out;
   }
 
@@ -377,11 +616,11 @@
     history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search);
   }
 
-  // Measures the small caps lines with the fonts the banner falls back to,
-  // so the divider fits the motto the way GitHub will show it.
+  // Measures the small lines with the fonts the banner falls back to, so the
+  // divider fits the motto the way GitHub will show it.
   const ctx = document.createElement('canvas').getContext('2d');
-  function measure(text, size, spacing) {
-    ctx.font = '500 ' + size + "px 'Helvetica Neue', Helvetica, Arial, sans-serif";
+  function measure(text, size, spacing, font) {
+    ctx.font = '500 ' + size + 'px ' + font.replace(/'?Geist( Mono)?'?,\s*/g, '');
     return ctx.measureText(text).width + spacing * text.length;
   }
 
@@ -389,28 +628,58 @@
     return B.SIZES.find(function (s) { return s.id === state.size; }) || null;
   }
 
-  function currentSvg() {
+  function options() {
     const p = preset();
-    return B.render({
+    return {
       width: state.width,
       height: state.height,
       safe: p && p.safe ? p.safe : null,
       wordmark: state.wordmark,
       overline: state.overline,
       motto: state.motto,
+      font: state.font,
+      caps: state.caps,
       theme: state.theme,
+      bg: state.bg,
+      ink: state.ink,
       accent: state.accent,
+      fill: state.fill,
+      bg2: state.bg2 || null,
+      angle: state.angle,
+      glow: state.glow / 100,
+      glowAt: state.glowAt,
+      image: image,
+      dim: state.dim / 100,
+      blur: state.blur,
+      pattern: state.pattern,
+      patternSize: state.patternSize / 100,
+      patternStrength: state.patternStrength / 100,
+      grain: state.grain / 100,
+      align: state.align,
+      weight: state.weight,
+      tracking: state.tracking,
       scale: state.scale / 100,
-      grid: state.grid,
       corners: state.corners,
       rule: state.rule,
       border: state.border,
       measure: measure,
-    });
+    };
   }
 
-  function dataUrl(svg) {
-    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  function currentSvg() {
+    return B.render(options());
+  }
+
+  function theme() {
+    return B.resolveTheme({ theme: state.theme, bg: state.bg, ink: state.ink });
+  }
+
+  function accentColour() {
+    return B.resolveAccent(state.accent, theme());
+  }
+
+  function autoBg2() {
+    return B.mix(theme().bg, accentColour(), 0.35);
   }
 
   function fileName(ext, scale) {
@@ -432,16 +701,217 @@
   function say(text) {
     $('status').textContent = text;
     clearTimeout(statusTimer);
-    statusTimer = setTimeout(function () { $('status').textContent = ''; }, 4000);
+    statusTimer = setTimeout(function () { $('status').textContent = ''; }, 5000);
   }
 
   function copy(text, done) {
+    const blocked = 'Your browser blocked the clipboard. Use the SVG button instead.';
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { say(done); }, function () { say('Your browser blocked the clipboard. Use the SVG button instead.'); });
+      navigator.clipboard.writeText(text).then(function () { say(done); }, function () { say(blocked); });
     } else {
-      say('Your browser blocked the clipboard. Use the SVG button instead.');
+      say(blocked);
     }
   }
+
+  function normalHex(v) {
+    v = String(v || '').trim().replace(/^#/, '');
+    if (/^[0-9a-f]{3}$/i.test(v)) v = v[0] + v[0] + v[1] + v[1] + v[2] + v[2];
+    return /^[0-9a-f]{6}$/i.test(v) ? '#' + v.toUpperCase() : null;
+  }
+
+  // Colour picker. Used instead of <input type="color">, which opens the old
+  // system dialog on Windows.
+  const picker = (function () {
+    const el = $('picker');
+    const sv = $('sv');
+    const hue = $('hue');
+    const hexInput = $('hex');
+    const RECENT_KEY = 'cartiqo-banner-recent';
+    const BRAND = ['#7C5CFF', '#0E1013', '#F4F4F6', '#FFFAFA', '#000000', '#FFFFFF', '#0A0F24', '#25282F',
+      '#F2EDE4', '#7D97FF', '#F5B544', '#FF7A80', '#4FD383', '#38C9E0', '#B69BFF', '#C3C8D2'];
+    let hsv = { h: 0, s: 0, v: 0 };
+    let field = null; // { button, get, set }
+    let startHex = null;
+
+    function toHsv(h) {
+      const n = parseInt(h.slice(1), 16);
+      const r = ((n >> 16) & 255) / 255;
+      const g = ((n >> 8) & 255) / 255;
+      const b = (n & 255) / 255;
+      const max = Math.max(r, g, b);
+      const d = max - Math.min(r, g, b);
+      let hh = hsv.h;
+      if (d) {
+        hh = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        hh *= 60;
+        if (hh < 0) hh += 360;
+      }
+      return { h: hh, s: max ? d / max : 0, v: max };
+    }
+
+    function toHex(c) {
+      const k = c.v * c.s;
+      const x = k * (1 - Math.abs((c.h / 60) % 2 - 1));
+      const m = c.v - k;
+      const rgb = c.h < 60 ? [k, x, 0] : c.h < 120 ? [x, k, 0] : c.h < 180 ? [0, k, x] : c.h < 240 ? [0, x, k] : c.h < 300 ? [x, 0, k] : [k, 0, x];
+      return '#' + rgb.map(function (v) { return Math.round((v + m) * 255).toString(16).padStart(2, '0'); }).join('').toUpperCase();
+    }
+
+    function recent() {
+      try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch (e) { return []; }
+    }
+
+    function remember(hex) {
+      try {
+        const list = [hex].concat(recent().filter(function (c) { return c !== hex; })).slice(0, 8);
+        localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+      } catch (e) { /* storage blocked: recent colours just aren't kept */ }
+    }
+
+    function fillSwatches(box, colours) {
+      box.innerHTML = '';
+      colours.forEach(function (c) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.style.setProperty('--c', c);
+        b.title = c;
+        b.setAttribute('aria-label', c);
+        b.addEventListener('click', function () { pick(c); });
+        box.appendChild(b);
+      });
+    }
+
+    function paint() {
+      const hex = toHex(hsv);
+      el.style.setProperty('--hue', toHex({ h: hsv.h, s: 1, v: 1 }));
+      el.style.setProperty('--pick', hex);
+      $('sv-handle').style.left = hsv.s * 100 + '%';
+      $('sv-handle').style.top = (1 - hsv.v) * 100 + '%';
+      $('hue-handle').style.left = hsv.h / 360 * 100 + '%';
+      sv.setAttribute('aria-valuetext', hex);
+      hue.setAttribute('aria-valuenow', Math.round(hsv.h));
+      if (document.activeElement !== hexInput) hexInput.value = hex.slice(1);
+    }
+
+    function changed() {
+      paint();
+      field.set(toHex(hsv));
+    }
+
+    function pick(hex) {
+      hsv = toHsv(hex);
+      changed();
+    }
+
+    function position() {
+      const r = field.button.getBoundingClientRect();
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      let left = Math.min(Math.max(8, r.left), document.documentElement.clientWidth - w - 8);
+      let top = r.bottom + 6;
+      if (top + h > window.innerHeight - 8 && r.top - h - 6 > 8) top = r.top - h - 6;
+      el.style.left = left + window.scrollX + 'px';
+      el.style.top = top + window.scrollY + 'px';
+    }
+
+    function open(button, get, set) {
+      if (field && field.button === button) { close(true); return; }
+      if (field) close(false);
+      field = { button: button, get: get, set: set };
+      startHex = get();
+      hsv = toHsv(startHex);
+      fillSwatches($('picker-brand'), BRAND);
+      const rec = recent();
+      $('picker-recent').hidden = $('picker-recent-title').hidden = !rec.length;
+      fillSwatches($('picker-recent'), rec);
+      el.hidden = false;
+      paint();
+      position();
+      button.setAttribute('aria-expanded', 'true');
+      sv.focus({ preventScroll: true });
+    }
+
+    function close(focusButton) {
+      if (!field) return;
+      const now = field.get();
+      if (now !== startHex) remember(now);
+      field.button.setAttribute('aria-expanded', 'false');
+      if (focusButton) field.button.focus();
+      field = null;
+      el.hidden = true;
+    }
+
+    function drag(target, onMove) {
+      target.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        target.setPointerCapture(e.pointerId);
+        target.focus({ preventScroll: true });
+        onMove(e);
+        function move(ev) { onMove(ev); }
+        function up() {
+          target.removeEventListener('pointermove', move);
+          target.removeEventListener('pointerup', up);
+          target.removeEventListener('pointercancel', up);
+        }
+        target.addEventListener('pointermove', move);
+        target.addEventListener('pointerup', up);
+        target.addEventListener('pointercancel', up);
+      });
+    }
+
+    drag(sv, function (e) {
+      const r = sv.getBoundingClientRect();
+      hsv.s = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+      hsv.v = 1 - Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+      changed();
+    });
+    drag(hue, function (e) {
+      const r = hue.getBoundingClientRect();
+      hsv.h = Math.min(359.9, Math.max(0, (e.clientX - r.left) / r.width * 360));
+      changed();
+    });
+
+    sv.addEventListener('keydown', function (e) {
+      const step = e.shiftKey ? 0.1 : 0.01;
+      if (e.key === 'ArrowLeft') hsv.s = Math.max(0, hsv.s - step);
+      else if (e.key === 'ArrowRight') hsv.s = Math.min(1, hsv.s + step);
+      else if (e.key === 'ArrowUp') hsv.v = Math.min(1, hsv.v + step);
+      else if (e.key === 'ArrowDown') hsv.v = Math.max(0, hsv.v - step);
+      else return;
+      e.preventDefault();
+      changed();
+    });
+    hue.addEventListener('keydown', function (e) {
+      const step = e.shiftKey ? 10 : 1;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') hsv.h = (hsv.h - step + 360) % 360;
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') hsv.h = (hsv.h + step) % 360;
+      else return;
+      e.preventDefault();
+      changed();
+    });
+    hexInput.addEventListener('input', function () {
+      const hex = normalHex(hexInput.value);
+      if (hex && hexInput.value.replace('#', '').length !== 3) pick(hex);
+    });
+    hexInput.addEventListener('blur', function () {
+      const hex = normalHex(hexInput.value);
+      if (hex) pick(hex);
+      else paint();
+    });
+    hexInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); hexInput.blur(); close(true); }
+    });
+
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(true); }
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (field && !el.contains(e.target) && !field.button.contains(e.target)) close(false);
+    });
+    window.addEventListener('resize', function () { if (field) position(); });
+
+    return { open: open, close: close, isOpenFor: function (b) { return !!field && field.button === b; } };
+  })();
 
   // Controls
 
@@ -452,71 +922,118 @@
     o.textContent = s.name + ' · ' + s.width + ' × ' + s.height;
     sizeSelect.appendChild(o);
   });
-  const customOption = document.createElement('option');
-  customOption.value = 'custom';
-  customOption.textContent = 'Custom size';
-  sizeSelect.appendChild(customOption);
+  sizeSelect.insertAdjacentHTML('beforeend', '<option value="custom">Custom size</option>');
+
+  const themes = $('themes');
+  Object.keys(B.THEMES).concat('custom').forEach(function (key) {
+    const label = document.createElement('label');
+    label.className = 'theme';
+    label.innerHTML = '<input type="radio" name="theme" data-key="theme" value="' + key + '"><span class="face"></span><span class="name">' + (B.THEMES[key] ? B.THEMES[key].name : 'Custom') + '</span>';
+    themes.appendChild(label);
+  });
 
   const swatches = $('swatches');
   Object.keys(B.ACCENTS).forEach(function (key) {
     const label = document.createElement('label');
     label.className = 'swatch';
     label.title = B.ACCENTS[key].name;
-    label.innerHTML = '<input type="radio" name="accent" value="' + key + '" aria-label="' + B.ACCENTS[key].name + '"><span></span>';
+    label.innerHTML = '<input type="radio" name="accent" data-key="accent" value="' + key + '" aria-label="' + B.ACCENTS[key].name + '"><span></span>';
     swatches.appendChild(label);
   });
-  const custom = document.createElement('label');
-  custom.className = 'swatch custom';
-  custom.title = 'Pick a colour';
-  custom.innerHTML = '<input type="color" id="accent-custom" aria-label="Pick a colour"><span></span>';
-  swatches.appendChild(custom);
+  const customDot = document.createElement('button');
+  customDot.type = 'button';
+  customDot.className = 'swatch-button';
+  customDot.title = 'Pick any colour';
+  customDot.setAttribute('aria-label', 'Pick any colour');
+  customDot.setAttribute('aria-haspopup', 'dialog');
+  swatches.appendChild(customDot);
+
+  // Colour fields: bg and ink for the custom theme, bg2 for the gradient.
+  const colourFields = {
+    bg: { get: function () { return state.bg; }, set: function (v) { state.bg = v; } },
+    ink: { get: function () { return state.ink; }, set: function (v) { state.ink = v; } },
+    bg2: { get: function () { return state.bg2 || autoBg2(); }, set: function (v) { state.bg2 = v; } },
+  };
+  document.querySelectorAll('[data-color]').forEach(function (button) {
+    const f = colourFields[button.dataset.color];
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.addEventListener('click', function () {
+      picker.open(button, f.get, function (v) { f.set(v); schedule(); });
+    });
+  });
+  customDot.addEventListener('click', function () {
+    picker.open(customDot, accentColour, function (v) { state.accent = v; schedule(); });
+  });
+  $('bg2-auto').addEventListener('click', function () {
+    state.bg2 = '';
+    picker.close(false);
+    schedule();
+  });
 
   function syncControls() {
-    sizeSelect.value = preset() ? state.size : 'custom';
-    $('width').value = state.width;
-    $('height').value = state.height;
-    $('wordmark').value = state.wordmark;
-    $('overline').value = state.overline;
-    $('motto').value = state.motto;
-    form.querySelectorAll('input[name=theme]').forEach(function (r) { r.checked = r.value === state.theme; });
-    $('scale').value = state.scale;
-    ['grid', 'corners', 'rule', 'border', 'safeGuide'].forEach(function (k) { $(k).checked = state[k]; });
-    $('pngScale').value = String(state.pngScale);
+    form.querySelectorAll('[data-key]').forEach(function (el) {
+      const v = state[el.dataset.key];
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if (el.type === 'radio') el.checked = el.value === String(v);
+      else if (el.dataset.key === 'size') el.value = preset() ? v : 'custom';
+      else el.value = v;
+    });
   }
 
-  function update() {
-    const svg = currentSvg();
-    $('preview').src = dataUrl(svg);
-    $('preview').alt = 'Banner preview, ' + state.width + ' by ' + state.height;
+  function paintControls() {
+    const t = theme();
 
-    const p = preset();
-    $('format').textContent = p ? p.name : 'Custom size';
-    $('dims').textContent = state.width + ' × ' + state.height;
-    $('scale-out').textContent = state.scale + '%';
+    // Theme chips show their own background, text and dot.
+    themes.querySelectorAll('.theme').forEach(function (label) {
+      const key = label.querySelector('input').value;
+      const th = B.resolveTheme({ theme: key, bg: state.bg, ink: state.ink });
+      const face = label.querySelector('.face');
+      face.style.setProperty('--bg-c', th.bg);
+      face.innerHTML = B.wordmark('C.', th.ink, B.resolveAccent(B.ACCENTS[state.accent] ? state.accent : 'cartiqo', th));
+    });
 
     // Swatches show the colour the dot gets on the current theme.
     swatches.querySelectorAll('input[name=accent]').forEach(function (r) {
-      const a = B.ACCENTS[r.value];
-      r.nextElementSibling.style.setProperty('--c', a[state.theme]);
+      r.nextElementSibling.style.setProperty('--c', B.resolveAccent(r.value, t));
       r.checked = r.value === state.accent;
     });
-    const isCustom = !B.ACCENTS[state.accent];
-    custom.classList.toggle('on', isCustom);
-    if (isCustom) {
-      custom.querySelector('span').style.setProperty('--c', state.accent);
-      $('accent-custom').value = state.accent;
+    const customAccent = !B.ACCENTS[state.accent];
+    customDot.classList.toggle('on', customAccent);
+    customDot.style.setProperty('--c', customAccent ? state.accent : '');
+
+    document.querySelectorAll('[data-color]').forEach(function (button) {
+      const key = button.dataset.color;
+      const value = colourFields[key].get();
+      const auto = key === 'bg2' && !state.bg2;
+      button.innerHTML = '<span class="chip"></span><span class="hex">' + value + '</span>' + (auto ? '<span class="tag">Auto</span>' : '');
+      button.querySelector('.chip').style.setProperty('--c', value);
+    });
+    $('bg2-auto').hidden = !state.bg2;
+
+    if (state.theme === 'custom') {
+      const ratio = B.contrast(state.bg, state.ink);
+      const el = $('contrast');
+      el.textContent = 'Contrast ' + ratio.toFixed(1) + ':1' + (ratio < 4.5 ? '. That is hard to read; 4.5:1 or more works for everyone.' : '.');
+      el.classList.toggle('warn', ratio < 4.5);
     }
 
-    const hasSafe = !!(p && p.safe);
-    $('safe-toggle').hidden = !hasSafe;
-    const safe = $('safe');
-    safe.hidden = !(hasSafe && state.safeGuide);
-    if (hasSafe) {
-      safe.style.left = ((state.width - p.safe.width) / 2 / state.width * 100) + '%';
-      safe.style.top = ((state.height - p.safe.height) / 2 / state.height * 100) + '%';
-      safe.style.width = (p.safe.width / state.width * 100) + '%';
-      safe.style.height = (p.safe.height / state.height * 100) + '%';
-    }
+    form.querySelectorAll('[data-out]').forEach(function (out) {
+      out.textContent = state[out.dataset.out] + out.dataset.unit;
+    });
+
+    // Groups that only matter for one choice, e.g. data-when="fill:gradient".
+    form.querySelectorAll('[data-when]').forEach(function (el) {
+      const parts = el.dataset.when.split(':');
+      const not = parts[1][0] === '!';
+      const match = String(state[parts[0]]) === parts[1].replace('!', '');
+      el.hidden = not ? match : !match;
+    });
+
+    const p = preset();
+    $('safe-toggle').hidden = !(p && p.safe);
+    $('image-hint').textContent = image ? 'Your image stays on this device and is not in shared links.' : 'Or drop an image on the preview. It stays on your device.';
+    $('image-remove').hidden = !image;
+    $('image-pick').textContent = image ? 'Change image' : 'Choose image';
 
     const left = Array.from(new Set(Array.from(state.wordmark.toUpperCase()).filter(function (c) { return B.CHARACTERS.indexOf(c) < 0; })));
     const hint = $('wordmark-hint');
@@ -524,58 +1041,132 @@
     hint.textContent = left.length
       ? 'The wordmark has no ' + left.join(' ') + ', so ' + (left.length > 1 ? 'they are' : 'it is') + ' left out.'
       : "Letters, numbers, spaces and . - / ! '. A full stop becomes the dot.";
+  }
 
+  let previewUrl = null;
+  function update() {
+    const svg = currentSvg();
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    $('preview').src = url;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = url;
+    $('preview').alt = 'Banner preview, ' + state.width + ' by ' + state.height;
+
+    const p = preset();
+    $('format').textContent = p ? p.name : 'Custom size';
+    $('dims').textContent = state.width + ' × ' + state.height;
+
+    const safe = $('safe');
+    safe.hidden = !(p && p.safe && state.safeGuide);
+    if (p && p.safe) {
+      safe.style.left = ((state.width - p.safe.width) / 2 / state.width * 100) + '%';
+      safe.style.top = ((state.height - p.safe.height) / 2 / state.height * 100) + '%';
+      safe.style.width = (p.safe.width / state.width * 100) + '%';
+      safe.style.height = (p.safe.height / state.height * 100) + '%';
+    }
+
+    paintControls();
     writeHash();
   }
 
-  function clampSize(v, fallback) {
-    v = Math.round(Number(v));
-    return isFinite(v) && v >= 100 && v <= 6000 ? v : fallback;
+  // Dragging a slider or the picker fires many events; draw once per frame.
+  let frame = 0;
+  function schedule() {
+    if (frame) return;
+    frame = requestAnimationFrame(function () { frame = 0; update(); });
   }
 
-  sizeSelect.addEventListener('change', function () {
-    state.size = sizeSelect.value;
-    const p = preset();
-    if (p) { state.width = p.width; state.height = p.height; }
-    syncControls();
-    update();
-  });
+  function onControl(e) {
+    const el = e.target;
+    const key = el.dataset && el.dataset.key;
+    if (!key || (el.type === 'radio' && !el.checked)) return;
+    let v = el.type === 'checkbox' ? el.checked : (el.type === 'range' || el.type === 'number' || key === 'pngScale') ? Number(el.value) : el.value;
 
-  ['width', 'height'].forEach(function (k) {
-    $(k).addEventListener('input', function () {
-      const v = clampSize($(k).value, null);
-      if (v === null) return;
-      state[k] = v;
+    if (key === 'width' || key === 'height') {
+      v = Math.round(v);
+      if (!(v >= 100 && v <= 6000)) return;
+      state[key] = v;
       const match = B.SIZES.find(function (s) { return s.width === state.width && s.height === state.height; });
       state.size = match ? match.id : 'custom';
-      sizeSelect.value = match ? match.id : 'custom';
-      update();
-    });
-    $(k).addEventListener('change', function () { $(k).value = state[k]; });
-  });
-
-  ['wordmark', 'overline', 'motto'].forEach(function (k) {
-    $(k).addEventListener('input', function () { state[k] = $(k).value; update(); });
-  });
-
+      sizeSelect.value = state.size;
+      schedule();
+      return;
+    }
+    if (key === 'size') {
+      const p = B.SIZES.find(function (s) { return s.id === v; });
+      if (p) { state.width = p.width; state.height = p.height; }
+      state.size = v;
+      syncControls();
+      schedule();
+      return;
+    }
+    // A custom theme starts from the theme you were on.
+    if (key === 'theme' && v === 'custom' && state.theme !== 'custom') {
+      const from = B.THEMES[state.theme] || B.THEMES.dark;
+      state.bg = from.bg;
+      state.ink = from.ink;
+    }
+    if (key === 'fill' && v === 'image' && !image) $('image-file').click();
+    state[key] = v;
+    schedule();
+  }
+  form.addEventListener('input', onControl);
   form.addEventListener('change', function (e) {
-    const t = e.target;
-    if (t.name === 'theme') state.theme = t.value;
-    else if (t.name === 'accent') state.accent = t.value;
-    else if (t.type === 'checkbox') state[t.id] = t.checked;
-    else if (t.id === 'pngScale') state.pngScale = Number(t.value);
-    else return;
-    update();
+    onControl(e);
+    if (e.target.type === 'number') e.target.value = state[e.target.dataset.key];
   });
 
-  $('accent-custom').addEventListener('input', function (e) {
-    state.accent = e.target.value.toUpperCase();
-    update();
+  // Images are scaled down so the SVG stays a sensible size.
+  function loadImage(file) {
+    if (!file || !/^image\//.test(file.type)) { say('That file is not an image.'); return; }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function () {
+      const s = Math.min(1, 3000 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * s));
+      c.height = Math.max(1, Math.round(img.naturalHeight * s));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      image = file.type === 'image/png' ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.88);
+      URL.revokeObjectURL(url);
+      state.fill = 'image';
+      syncControls();
+      update();
+      say('Added ' + file.name + '.');
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      say('This browser could not open ' + file.name + '. Try a JPG or PNG.');
+    };
+    img.src = url;
+  }
+  $('image-pick').addEventListener('click', function () { $('image-file').click(); });
+  $('image-file').addEventListener('change', function (e) {
+    loadImage(e.target.files[0]);
+    e.target.value = '';
   });
-
-  $('scale').addEventListener('input', function () {
-    state.scale = Number($('scale').value);
+  $('image-remove').addEventListener('click', function () {
+    image = null;
+    state.fill = 'solid';
+    syncControls();
     update();
+    say('Removed the image.');
+  });
+  const stage = $('frame');
+  ['dragenter', 'dragover'].forEach(function (type) {
+    stage.addEventListener(type, function (e) {
+      if (!e.dataTransfer || Array.from(e.dataTransfer.types).indexOf('Files') < 0) return;
+      e.preventDefault();
+      stage.classList.add('drop');
+    });
+  });
+  ['dragleave', 'drop'].forEach(function (type) {
+    stage.addEventListener(type, function () { stage.classList.remove('drop'); });
+  });
+  stage.addEventListener('drop', function (e) {
+    if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+    e.preventDefault();
+    loadImage(e.dataTransfer.files[0]);
   });
 
   // Export
@@ -588,25 +1179,44 @@
 
   $('download-png').addEventListener('click', function () {
     const scale = state.pngScale;
+    const url = URL.createObjectURL(new Blob([currentSvg()], { type: 'image/svg+xml' }));
     const img = new Image();
     img.onload = function () {
       const canvas = document.createElement('canvas');
       canvas.width = state.width * scale;
       canvas.height = state.height * scale;
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(function (blob) {
-        if (!blob) { say('That PNG is too big for this browser. Try 1× or a smaller size.'); return; }
-        const name = fileName('png', scale);
-        save(blob, name);
-        say('Saved ' + name + '.');
-      }, 'image/png');
+      URL.revokeObjectURL(url);
+      try {
+        canvas.toBlob(function (blob) {
+          if (!blob) { say('That PNG is too big for this browser. Try 1× or a smaller size.'); return; }
+          const name = fileName('png', scale);
+          save(blob, name);
+          say('Saved ' + name + '.');
+        }, 'image/png');
+      } catch (err) {
+        say('This browser will not turn this banner into a PNG. Download the SVG instead.');
+      }
     };
-    img.onerror = function () { say('The PNG could not be drawn. Download the SVG instead.'); };
-    img.src = dataUrl(currentSvg());
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      say('The PNG could not be drawn. Download the SVG instead.');
+    };
+    img.src = url;
   });
 
   $('copy-svg').addEventListener('click', function () { copy(currentSvg(), 'Copied the SVG.'); });
-  $('copy-link').addEventListener('click', function () { copy(location.href, 'Copied a link to this banner.'); });
+  $('copy-link').addEventListener('click', function () {
+    copy(location.href, image ? 'Copied a link. Your image is not in it, so add it again after opening the link.' : 'Copied a link to this banner.');
+  });
+  $('reset').addEventListener('click', function () {
+    const size = { size: state.size, width: state.width, height: state.height };
+    Object.assign(state, DEFAULTS, size);
+    image = null;
+    syncControls();
+    update();
+    say('Back to the CARTIQO defaults. The size stayed.');
+  });
 
   $('mark').innerHTML = B.wordmark('CARTIQO.', 'currentColor', B.ACCENTS.cartiqo.dark);
 
