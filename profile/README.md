@@ -7,7 +7,7 @@
 
 <br>
 
-[cartiqolabs.com](https://cartiqolabs.com) · [Open source](https://github.com/CartiqoFramework)
+[![Website](https://img.shields.io/badge/Website-cartiqolabs.com-7C5CFF?style=flat-square&labelColor=111113)](https://cartiqolabs.com) [![Discord](https://img.shields.io/badge/Discord-Join%20the%20server-2A2D34?style=flat-square&labelColor=111113&logo=discord&logoColor=white)](https://discord.gg/A6b4bTTaeJ) [![Open source](https://img.shields.io/badge/Open%20source-CartiqoFramework-2A2D34?style=flat-square&labelColor=111113&logo=github&logoColor=white)](https://github.com/CartiqoFramework) [![Location](https://img.shields.io/badge/Based%20in-Denmark-2A2D34?style=flat-square&labelColor=111113)](https://cartiqolabs.com)
 
 </div>
 
@@ -37,6 +37,18 @@ CARTIQO Labs is where CARTIQO gets built, in Denmark. CARTIQO is a family of pro
 ## Where we are
 
 Everything runs as an MVP while we get it ready. Store launches first, then Chat, then Forum and Wiki. Club follows once Store and Chat have people in them, and Review comes last, starting with local businesses in Kolding. Labs is where we share the progress along the way.
+
+## Follow along
+
+The easiest way to see what we're working on is the [CARTIQO Discord](https://discord.gg/A6b4bTTaeJ). We post what we ship, ask what you think before we build, and fix the bugs you find. Come say hi.
+
+## How it's built
+
+TypeScript from end to end. React for every product, deployed per domain on Cloudflare Pages. One Node and Fastify API with MySQL, on servers in Frankfurt. Stripe for payments, and one design system shared by every product.
+
+## Tools
+
+- [Banner maker](https://cartiqolabs.github.io/.github/): makes CARTIQO banners like the one at the top of this page, in the sizes GitHub, Discord, X, LinkedIn and YouTube want.
 
 ## Open source
 
