@@ -241,8 +241,9 @@
   .check { display: flex; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
   input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 
-  .actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-  .actions select { width: 72px; }
+  .actions { display: flex; gap: 8px; }
+  .actions button { flex: 1; }
+  .actions select { width: 72px; flex: none; }
   .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   button {
     height: 36px;
@@ -407,6 +408,27 @@
       <label data-when="logoBg:!none,shape:rounded" hidden>Corner radius
         <span class="range"><input type="range" data-key="radius" min="4" max="50" step="1"><output data-out="radius" data-unit="%"></output></span>
       </label>
+      <label data-when="logoBg:!none" hidden>Pattern
+        <select data-key="logoPattern">
+          <option value="none">None</option>
+          <option value="grid">Grid</option>
+          <option value="dots">Dots</option>
+          <option value="crosses">Crosses</option>
+          <option value="lines">Lines</option>
+          <option value="diagonal">Diagonal</option>
+        </select>
+      </label>
+      <div class="two" data-when="logoBg:!none,logoPattern:!none" hidden>
+        <label>Pattern size
+          <span class="range"><input type="range" data-key="logoPatternSize" min="50" max="250" step="10"><output data-out="logoPatternSize" data-unit="%"></output></span>
+        </label>
+        <label>Strength
+          <span class="range"><input type="range" data-key="logoPatternStrength" min="20" max="400" step="10"><output data-out="logoPatternStrength" data-unit="%"></output></span>
+        </label>
+      </div>
+      <label data-when="logoBg:!none" hidden>Grain
+        <span class="range"><input type="range" data-key="logoGrain" min="0" max="100" step="5"><output data-out="logoGrain" data-unit="%"></output></span>
+      </label>
       <label>Padding
         <span class="range"><input type="range" data-key="padding" min="0" max="40" step="1"><output data-out="padding" data-unit="%"></output></span>
       </label>
@@ -458,7 +480,7 @@
           <span class="range"><input type="range" data-key="duration" min="2" max="10" step="0.5"><output data-out="duration" data-unit="s"></output></span>
         </label>
       </div>
-      <span class="hint" data-when="animate:!none" hidden>The preview loops. SVG and video play once and stop on the finished wordmark, PNG is the finished frame.</span>
+      <span class="hint" id="animate-hint" data-when="animate:!none" hidden></span>
     </fieldset>
 
     <fieldset>
@@ -476,7 +498,7 @@
       </div>
     </fieldset>
 
-    <fieldset data-when="mode:banner|logoBg:!none">
+    <fieldset data-when="mode:banner">
       <legend>Background</legend>
       <div class="segmented" role="radiogroup" aria-label="Fill" data-when="mode:banner">
         <label><input type="radio" name="fill" data-key="fill" value="solid"><span>Solid</span></label>
@@ -577,14 +599,14 @@
       <legend>Export</legend>
       <div class="actions">
         <button type="button" class="primary" id="download-png">Download PNG</button>
-        <select data-key="pngScale" aria-label="PNG scale">
+        <button type="button" id="download-video" data-when="animate:!none" hidden>Video</button>
+        <select data-key="pngScale" aria-label="Scale for PNG and video">
           <option value="1">1×</option>
           <option value="2">2×</option>
         </select>
       </div>
       <div class="row">
         <button type="button" id="download-svg">SVG</button>
-        <button type="button" id="download-video" data-when="animate:!none" hidden>Video</button>
         <button type="button" id="copy-svg">Copy SVG</button>
         <button type="button" id="copy-link">Copy link</button>
       </div>
@@ -684,6 +706,11 @@ function start() {
     radius: 22,
     padding: 12,
     logoSize: 256,
+    // Logos keep their own pattern and grain, so the banner's grid stays off them.
+    logoPattern: 'none',
+    logoPatternSize: 100,
+    logoPatternStrength: 100,
+    logoGrain: 0,
   };
   // Each logo type starts from its usual background and padding.
   const LOGO_TYPES = {
@@ -789,10 +816,10 @@ function start() {
       ink: state.ink,
       accent: state.accent,
       background: state.logoBg,
-      pattern: state.pattern,
-      patternSize: state.patternSize / 100,
-      patternStrength: state.patternStrength / 100,
-      grain: state.grain / 100,
+      pattern: state.logoPattern,
+      patternSize: state.logoPatternSize / 100,
+      patternStrength: state.logoPatternStrength / 100,
+      grain: state.logoGrain / 100,
       bg2: state.bg2 || null,
       angle: state.angle,
       shape: state.shape,
@@ -1209,6 +1236,10 @@ function start() {
       b.classList.toggle('on', Number(b.dataset.px) === state.logoSize);
     });
 
+    $('animate-hint').textContent = reducedMotion.matches
+      ? 'Your device asks for less motion, so the preview stays still. SVG and video still animate; PNG is the finished frame.'
+      : 'The preview loops. SVG and video play once and stop on the finished wordmark; PNG is the finished frame.';
+
     hintFor(state.wordmark, $('wordmark-hint'), 'wordmark', "Letters, numbers, spaces and . - / ! '. A full stop becomes the dot.");
     hintFor(state.mark, $('mark-hint'), 'icon', 'One to three characters work best. A full stop becomes the dot.');
   }
@@ -1222,9 +1253,14 @@ function start() {
       : fallback;
   }
 
+  // With reduced motion the preview shows the finished wordmark instead of looping.
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (reducedMotion.addEventListener) reducedMotion.addEventListener('change', function () { schedule(); });
+  else if (reducedMotion.addListener) reducedMotion.addListener(function () { schedule(); });
+
   let previewUrl = null;
   function update() {
-    const svg = currentSvg();
+    const svg = currentSvg(reducedMotion.matches ? { animate: 'none' } : null);
     const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
     $('preview').src = url;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -1402,72 +1438,123 @@ function start() {
     img.src = url;
   });
 
-  // Draws every frame up front, then plays them into a recorder at a steady
-  // rate. Timers rather than animation frames keep it going in a background tab.
-  // Video has no transparency, so a see-through logo sits on its theme colour.
+  // Records one play-through plus a short hold. Frames are kept as SVG images
+  // and drawn onto the canvas only when their moment comes, so memory stays
+  // small at any size. A worker keeps time, because page timers slow to about
+  // once a second in a background tab. Video has no transparency, so a
+  // see-through logo sits on its theme colour, and anything above 4K is scaled
+  // down to fit.
+  const MAX_VIDEO_PIXELS = 3840 * 2160;
+
+  function startTicker(interval, fn) {
+    try {
+      const src = URL.createObjectURL(new Blob(['setInterval(function () { postMessage(0); }, ' + interval + ');'], { type: 'text/javascript' }));
+      const worker = new Worker(src);
+      worker.onmessage = fn;
+      return function () { worker.terminate(); URL.revokeObjectURL(src); };
+    } catch (err) {
+      const id = setInterval(fn, interval);
+      return function () { clearInterval(id); };
+    }
+  }
+
   $('download-video').addEventListener('click', function () {
-    if (typeof MediaRecorder === 'undefined') { say('This browser cannot record video. Download the SVG instead.'); return; }
+    if (typeof MediaRecorder === 'undefined' || !HTMLCanvasElement.prototype.captureStream) {
+      say('This browser cannot record video. Download the SVG instead.');
+      return;
+    }
     const button = $('download-video');
-    const scale = state.pngScale;
     const fps = 30;
     const count = Math.max(2, Math.round(state.duration * B.ANIMATION_END * fps));
     const hold = Math.round(1.5 * fps);
     const size = sizeOf(currentSvg());
+    const scale = Math.min(state.pngScale, Math.sqrt(MAX_VIDEO_PIXELS / (size.width * size.height)));
+    const capped = scale < state.pngScale;
     const canvas = document.createElement('canvas');
-    canvas.width = size.width * scale;
-    canvas.height = size.height * scale;
+    // Video encoders want even sizes.
+    canvas.width = Math.max(2, Math.round(size.width * scale / 2) * 2);
+    canvas.height = Math.max(2, Math.round(size.height * scale / 2) * 2);
     const g = canvas.getContext('2d');
     const backdrop = B.resolveTheme(state.mode === 'logo' ? logoOptions() : options()).bg;
-    const frames = [];
+    const urls = [];
+    let stopTicker = null;
+    let finished = false;
     button.disabled = true;
 
-    function paint(frame) {
-      g.fillStyle = backdrop;
-      g.fillRect(0, 0, canvas.width, canvas.height);
-      g.drawImage(frame, 0, 0);
+    // Runs once, however the recording ends.
+    function finish(message, blob, name) {
+      if (finished) return;
+      finished = true;
+      if (stopTicker) stopTicker();
+      urls.forEach(function (u) { URL.revokeObjectURL(u); });
+      button.disabled = false;
+      if (blob) save(blob, name);
+      say(message);
     }
 
-    function load(i) {
-      if (i === count) { record(); return; }
-      say('Drawing frame ' + (i + 1) + ' of ' + count + '…');
+    function frameImage(i) {
       const url = URL.createObjectURL(new Blob([currentSvg({ frame: i / (count - 1) * B.ANIMATION_END })], { type: 'image/svg+xml' }));
-      const img = new Image();
-      img.onload = function () {
-        createImageBitmap(img, { resizeWidth: canvas.width, resizeHeight: canvas.height }).then(function (bmp) {
-          URL.revokeObjectURL(url);
-          frames.push(bmp);
-          load(i + 1);
-        });
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); button.disabled = false; say('A frame could not be drawn.'); };
-      img.src = url;
+      urls.push(url);
+      return new Promise(function (resolve, reject) {
+        const img = new Image();
+        img.onload = function () { resolve(img); };
+        img.onerror = reject;
+        img.src = url;
+      });
     }
 
-    function record() {
-      const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(function (m) { return MediaRecorder.isTypeSupported(m); });
-      paint(frames[0]);
-      const recorder = new MediaRecorder(canvas.captureStream(fps), { mimeType: type, videoBitsPerSecond: 12e6 });
+    function record(frames) {
+      const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(function (m) { return MediaRecorder.isTypeSupported(m); }) || '';
+      const recorder = new MediaRecorder(canvas.captureStream(fps), type ? { mimeType: type, videoBitsPerSecond: 12e6 } : { videoBitsPerSecond: 12e6 });
       const chunks = [];
+      let shown = -1;
+
+      function paint(i) {
+        g.fillStyle = backdrop;
+        g.fillRect(0, 0, canvas.width, canvas.height);
+        g.drawImage(frames[Math.min(i, count - 1)], 0, 0, canvas.width, canvas.height);
+      }
+
       recorder.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
+      recorder.onerror = function () { finish('The recording stopped with an error. Try again, or download the SVG.'); };
       recorder.onstop = function () {
-        frames.forEach(function (f) { f.close(); });
-        button.disabled = false;
-        const name = fileName(/mp4/.test(type) ? 'mp4' : 'webm', scale, size);
-        save(new Blob(chunks, { type: type }), name);
-        say('Saved ' + name + '.');
+        if (!chunks.length) { finish('The recording came out empty. Try again, or download the SVG.'); return; }
+        const kind = recorder.mimeType || type || 'video/webm';
+        const name = fileName(/mp4/.test(kind) ? 'mp4' : 'webm', 1, { width: canvas.width, height: canvas.height });
+        const note = capped ? ' Video is capped at 4K, so it is ' + canvas.width + ' × ' + canvas.height + '.' : '';
+        finish('Saved ' + name + '.' + note, new Blob(chunks, { type: kind }), name);
       };
-      say('Recording ' + Math.round((count + hold) / fps * 10) / 10 + ' seconds…');
+
+      paint(0);
+      shown = 0;
       recorder.start();
       const started = performance.now();
-      (function tick() {
+      say('Recording ' + Math.round((count + hold) / fps * 10) / 10 + ' seconds…');
+      stopTicker = startTicker(Math.round(1000 / fps / 2), function () {
+        if (finished || recorder.state !== 'recording') return;
         const i = Math.floor((performance.now() - started) / 1000 * fps);
-        if (i >= count + hold) { recorder.stop(); return; }
-        paint(frames[Math.min(i, count - 1)]);
-        setTimeout(tick, 1000 / fps / 2);
-      })();
+        try {
+          if (i >= count + hold) recorder.stop();
+          else if (i !== shown) { paint(i); shown = i; }
+        } catch (err) {
+          finish('A frame could not be drawn. Download the SVG instead.');
+          try { recorder.stop(); } catch (e) { /* already stopped */ }
+        }
+      });
     }
 
-    load(0);
+    say('Drawing ' + count + ' frames…');
+    const loading = [];
+    for (let i = 0; i < count; i++) loading.push(frameImage(i));
+    Promise.all(loading).then(function (frames) {
+      try {
+        record(frames);
+      } catch (err) {
+        finish('This browser cannot record this video. Download the SVG instead.');
+      }
+    }, function () {
+      finish('A frame could not be drawn. Download the SVG instead.');
+    });
   });
 
   $('copy-svg').addEventListener('click', function () { copy(currentSvg({ loop: false }), 'Copied the SVG.'); });
