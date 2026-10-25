@@ -1438,13 +1438,16 @@ function start() {
     img.src = url;
   });
 
-  // Records one play-through plus a short hold. Frames are kept as SVG images
-  // and drawn onto the canvas only when their moment comes, so memory stays
-  // small at any size. A worker keeps time, because page timers slow to about
-  // once a second in a background tab. Video has no transparency, so a
-  // see-through logo sits on its theme colour, and anything above 4K is scaled
-  // down to fit.
+  // Records one play-through plus a short hold. Drawing a frame from its SVG
+  // can take longer than a frame lasts, so frames are drawn ahead in batches
+  // that fit a fixed memory budget, and the recorder pauses while each batch is
+  // drawn; paused time leaves no gap in the video. It also pauses while the tab
+  // is in the background, where browsers slow canvas capture down. A worker
+  // keeps time, because page timers slow down when the window is covered.
+  // Video has no transparency, so a see-through logo sits on its theme colour,
+  // and anything above 4K is scaled down to fit.
   const MAX_VIDEO_PIXELS = 3840 * 2160;
+  const VIDEO_BATCH_BYTES = 160 * 1024 * 1024;
 
   function startTicker(interval, fn) {
     try {
@@ -1476,9 +1479,15 @@ function start() {
     canvas.height = Math.max(2, Math.round(size.height * scale / 2) * 2);
     const g = canvas.getContext('2d');
     const backdrop = B.resolveTheme(state.mode === 'logo' ? logoOptions() : options()).bg;
-    const urls = [];
+    const batchSize = Math.max(4, Math.floor(VIDEO_BATCH_BYTES / (canvas.width * canvas.height * 4)));
+    // Every frame's SVG is made now, so changing settings mid-recording can't mix them.
+    const svgs = [];
+    for (let i = 0; i < count; i++) svgs.push(currentSvg({ frame: i / (count - 1) * B.ANIMATION_END }));
+    let recorder = null;
     let stopTicker = null;
+    let onTick = null;
     let finished = false;
+    let last = null; // the final frame, kept for the hold
     button.disabled = true;
 
     // Runs once, however the recording ends.
@@ -1486,37 +1495,120 @@ function start() {
       if (finished) return;
       finished = true;
       if (stopTicker) stopTicker();
-      urls.forEach(function (u) { URL.revokeObjectURL(u); });
+      if (last) last.close();
+      if (recorder && recorder.state !== 'inactive' && !blob) {
+        recorder.onstop = null;
+        try { recorder.stop(); } catch (e) { /* already stopped */ }
+      }
       button.disabled = false;
       if (blob) save(blob, name);
       say(message);
     }
 
-    function frameImage(i) {
-      const url = URL.createObjectURL(new Blob([currentSvg({ frame: i / (count - 1) * B.ANIMATION_END })], { type: 'image/svg+xml' }));
-      urls.push(url);
+    function fail(message) {
+      return function () { finish(message); };
+    }
+
+    // One frame as a bitmap at video size. Browsers that can't make a bitmap
+    // straight from an SVG get one from a canvas instead.
+    function bitmap(i) {
+      const url = URL.createObjectURL(new Blob([svgs[i]], { type: 'image/svg+xml' }));
       return new Promise(function (resolve, reject) {
         const img = new Image();
         img.onload = function () { resolve(img); };
         img.onerror = reject;
         img.src = url;
+      }).then(function (img) {
+        return createImageBitmap(img, { resizeWidth: canvas.width, resizeHeight: canvas.height }).catch(function () {
+          const c = document.createElement('canvas');
+          c.width = canvas.width;
+          c.height = canvas.height;
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          return createImageBitmap(c);
+        });
+      }).finally(function () { URL.revokeObjectURL(url); });
+    }
+
+    function drawBatch(from) {
+      const batch = [];
+      let chain = Promise.resolve();
+      for (let i = from; i < Math.min(count, from + batchSize); i++) {
+        chain = chain.then(function () { return bitmap(i); }).then(function (b) { batch.push(b); });
+      }
+      return chain.then(function () { return batch; });
+    }
+
+    function paint(frame) {
+      g.fillStyle = backdrop;
+      g.fillRect(0, 0, canvas.width, canvas.height);
+      g.drawImage(frame, 0, 0);
+    }
+
+    // Plays frames into the recorder in real time, then pauses it. While the
+    // tab is in the background the recording pauses too, and picks up where it
+    // left off when you come back.
+    function play(frames, times) {
+      return new Promise(function (resolve) {
+        paint(frames[0]);
+        let shown = 0;
+        let started = performance.now();
+        let hiddenAt = 0;
+        recorder.resume();
+        onTick = function () {
+          if (document.hidden) {
+            if (!hiddenAt) {
+              hiddenAt = performance.now();
+              recorder.pause();
+              say('Paused while this tab is in the background. It carries on when you come back.');
+            }
+            return;
+          }
+          if (hiddenAt) {
+            started += performance.now() - hiddenAt;
+            hiddenAt = 0;
+            recorder.resume();
+            say('Recording…');
+          }
+          const i = Math.floor((performance.now() - started) / 1000 * fps);
+          if (i >= times) {
+            onTick = null;
+            recorder.pause();
+            resolve();
+          } else if (i !== shown) {
+            paint(frames[Math.min(i, frames.length - 1)]);
+            shown = i;
+          }
+        };
       });
     }
 
-    function record(frames) {
-      const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(function (m) { return MediaRecorder.isTypeSupported(m); }) || '';
-      const recorder = new MediaRecorder(canvas.captureStream(fps), type ? { mimeType: type, videoBitsPerSecond: 12e6 } : { videoBitsPerSecond: 12e6 });
-      const chunks = [];
-      let shown = -1;
-
-      function paint(i) {
-        g.fillStyle = backdrop;
-        g.fillRect(0, 0, canvas.width, canvas.height);
-        g.drawImage(frames[Math.min(i, count - 1)], 0, 0, canvas.width, canvas.height);
+    function run(from) {
+      if (finished) return null;
+      if (from >= count) {
+        say('Recording the last ' + Math.round(hold / fps * 10) / 10 + ' seconds…');
+        return play([last], hold).then(function () { recorder.stop(); });
       }
+      say('Recording… ' + Math.round(from / count * 100) + '%');
+      return drawBatch(from).then(function (batch) {
+        if (finished) { batch.forEach(function (b) { b.close(); }); return null; }
+        return play(batch, batch.length).then(function () {
+          // The last frame stays for the hold; the rest are freed.
+          const end = batch.pop();
+          batch.forEach(function (b) { b.close(); });
+          if (last) last.close();
+          last = end;
+          return run(from + batchSize);
+        });
+      });
+    }
 
+    say('Drawing the first frames…');
+    try {
+      const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(function (m) { return MediaRecorder.isTypeSupported(m); }) || '';
+      recorder = new MediaRecorder(canvas.captureStream(fps), type ? { mimeType: type, videoBitsPerSecond: 12e6 } : { videoBitsPerSecond: 12e6 });
+      const chunks = [];
       recorder.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
-      recorder.onerror = function () { finish('The recording stopped with an error. Try again, or download the SVG.'); };
+      recorder.onerror = fail('The recording stopped with an error. Try again, or download the SVG.');
       recorder.onstop = function () {
         if (!chunks.length) { finish('The recording came out empty. Try again, or download the SVG.'); return; }
         const kind = recorder.mimeType || type || 'video/webm';
@@ -1524,37 +1616,17 @@ function start() {
         const note = capped ? ' Video is capped at 4K, so it is ' + canvas.width + ' × ' + canvas.height + '.' : '';
         finish('Saved ' + name + '.' + note, new Blob(chunks, { type: kind }), name);
       };
-
-      paint(0);
-      shown = 0;
-      recorder.start();
-      const started = performance.now();
-      say('Recording ' + Math.round((count + hold) / fps * 10) / 10 + ' seconds…');
       stopTicker = startTicker(Math.round(1000 / fps / 2), function () {
-        if (finished || recorder.state !== 'recording') return;
-        const i = Math.floor((performance.now() - started) / 1000 * fps);
-        try {
-          if (i >= count + hold) recorder.stop();
-          else if (i !== shown) { paint(i); shown = i; }
-        } catch (err) {
-          finish('A frame could not be drawn. Download the SVG instead.');
-          try { recorder.stop(); } catch (e) { /* already stopped */ }
-        }
+        if (!onTick || finished) return;
+        try { onTick(); } catch (err) { finish('A frame could not be drawn. Download the SVG instead.'); }
       });
+      recorder.start();
+      recorder.pause();
+    } catch (err) {
+      finish('This browser cannot record this video. Download the SVG instead.');
+      return;
     }
-
-    say('Drawing ' + count + ' frames…');
-    const loading = [];
-    for (let i = 0; i < count; i++) loading.push(frameImage(i));
-    Promise.all(loading).then(function (frames) {
-      try {
-        record(frames);
-      } catch (err) {
-        finish('This browser cannot record this video. Download the SVG instead.');
-      }
-    }, function () {
-      finish('A frame could not be drawn. Download the SVG instead.');
-    });
+    run(0).catch(fail('A frame could not be drawn. Download the SVG instead.'));
   });
 
   $('copy-svg').addEventListener('click', function () { copy(currentSvg({ loop: false }), 'Copied the SVG.'); });
