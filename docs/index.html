@@ -241,9 +241,6 @@
   .check { display: flex; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
   input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 
-  .actions { display: flex; gap: 8px; }
-  .actions button { flex: 1; }
-  .actions select { width: 72px; flex: none; }
   .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   button {
     height: 36px;
@@ -597,20 +594,25 @@
 
     <fieldset>
       <legend>Export</legend>
-      <div class="actions">
-        <button type="button" class="primary" id="download-png">Download PNG</button>
-        <button type="button" id="download-video" data-when="animate:!none" hidden>Video</button>
-        <select data-key="pngScale" aria-label="Scale for PNG and video">
-          <option value="1">1×</option>
-          <option value="2">2×</option>
-        </select>
+      <div class="two">
+        <label>Format
+          <select data-key="format" id="export-format"></select>
+        </label>
+        <label data-when="format:png|format:jpg|format:webp|format:gif|format:apng|format:webm|format:mp4">Scale
+          <select data-key="pngScale">
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
       </div>
+      <label class="check" data-when="format:gif,animate:!none|format:apng" hidden><input type="checkbox" data-key="loopForever"> Loop forever</label>
+      <span class="hint" id="format-hint"></span>
+      <button type="button" class="primary" id="download">Download PNG</button>
       <div class="row">
-        <button type="button" id="download-svg">SVG</button>
         <button type="button" id="copy-svg">Copy SVG</button>
         <button type="button" id="copy-link">Copy link</button>
+        <button type="button" id="reset">Start over</button>
       </div>
-      <button type="button" id="reset">Start over</button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
     </fieldset>
   </form>
@@ -645,15 +647,19 @@
 
 <script>
 // GitHub Pages lets browsers keep files for 10 minutes, so a new page can meet
-// an old banner.js. Asking for it with the page's deploy time keeps the two in step.
+// old scripts. Asking for them with the page's deploy time keeps them in step.
 (function () {
-  const s = document.createElement('script');
-  s.src = 'banner.js?v=' + (Date.parse(document.lastModified) || Date.now());
-  s.onload = start;
-  s.onerror = function () {
-    document.getElementById('status').textContent = 'The banner code did not load. Reload the page to try again.';
-  };
-  document.head.appendChild(s);
+  const version = Date.parse(document.lastModified) || Date.now();
+  let left = 2;
+  ['banner.js', 'encoders.js'].forEach(function (file) {
+    const s = document.createElement('script');
+    s.src = file + '?v=' + version;
+    s.onload = function () { if (--left === 0) start(); };
+    s.onerror = function () {
+      document.getElementById('status').textContent = 'The banner code did not load. Reload the page to try again.';
+    };
+    document.head.appendChild(s);
+  });
 })();
 
 function start() {
@@ -698,6 +704,8 @@ function start() {
     border: true,
     safeGuide: true,
     pngScale: 2,
+    format: 'png',
+    loopForever: true,
     mode: 'banner',
     logoType: 'wordmark',
     mark: 'C.',
@@ -855,11 +863,15 @@ function start() {
     return B.mix(theme().bg, accentColour(), 0.35);
   }
 
-  // e.g. cartiqo-1280x360-dark.png or cartiqo-icon-512x512-dark@2x.png
-  function fileName(ext, scale, size) {
-    const slug = state.wordmark.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cartiqo';
-    const kind = state.mode === 'logo' ? '-' + state.logoType : '';
-    return slug + kind + '-' + size.width + 'x' + size.height + '-' + state.theme + (scale > 1 ? '@' + scale + 'x' : '') + '.' + ext;
+  function slug() {
+    return state.wordmark.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cartiqo';
+  }
+
+  // e.g. cartiqo-1280x360-dark.png, cartiqo-icon-512x512-dark@2x.png or
+  // cartiqo-animated-1280x360-dark.png
+  function fileName(ext, scale, size, extra) {
+    const kind = (state.mode === 'logo' ? '-' + state.logoType : '') + (extra ? '-' + extra : '');
+    return slug() + kind + '-' + size.width + 'x' + size.height + '-' + state.theme + (scale > 1 ? '@' + scale + 'x' : '') + '.' + ext;
   }
 
   function save(blob, name) {
@@ -1173,6 +1185,7 @@ function start() {
 
   function paintControls() {
     const t = theme();
+    paintFormats();
 
     // Theme chips show their own background, text and dot.
     themes.querySelectorAll('.theme').forEach(function (label) {
@@ -1401,41 +1414,262 @@ function start() {
 
   // Export
 
-  $('download-svg').addEventListener('click', function () {
-    const svg = currentSvg({ loop: false });
-    const name = fileName('svg', 1, sizeOf(svg));
-    save(new Blob([svg], { type: 'image/svg+xml' }), name);
-    say('Saved ' + name + '.');
-  });
+  const E = window.CartiqoEncoders;
+  const ANIMATION_FPS = 25;
+  // GIF and animated PNG are encoded here in the page, so they stay at or
+  // under 2560 × 1440 to keep the wait and the file sensible.
+  const MAX_ANIMATION_PIXELS = 2560 * 1440;
 
-  $('download-png').addEventListener('click', function () {
-    const scale = state.pngScale;
+  const canWebp = (function () {
+    try { return document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0; } catch (e) { return false; }
+  })();
+
+  // The best container this browser can record for webm or mp4, or ''.
+  function videoType(container) {
+    if (typeof MediaRecorder === 'undefined' || !HTMLCanvasElement.prototype.captureStream) return '';
+    const types = container === 'mp4'
+      ? ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1', 'video/mp4']
+      : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    return types.find(function (m) { return MediaRecorder.isTypeSupported(m); }) || '';
+  }
+
+  function animated() {
+    return state.animate !== 'none';
+  }
+
+  function seeThrough() {
+    return state.mode === 'logo' && state.logoBg === 'none';
+  }
+
+  // Export formats, in the order the menu shows them. `when` says when one is offered.
+  const FORMATS = [
+    { id: 'png', name: 'PNG', hint: function () { return 'Full colour, keeps transparency.' + (animated() ? ' Saves the finished wordmark.' : ''); } },
+    { id: 'jpg', name: 'JPG', hint: function () { return 'Smaller files, no transparency' + (seeThrough() ? ', so the logo sits on its theme colour.' : '.') + (animated() ? ' Saves the finished wordmark.' : ''); } },
+    { id: 'webp', name: 'WebP', when: function () { return canWebp; }, hint: function () { return 'Smaller than PNG and keeps transparency.' + (animated() ? ' Saves the finished wordmark.' : ''); } },
+    { id: 'svg', name: 'SVG', hint: function () { return animated() ? 'Sharp at any size. Plays the animation once and stops on the finished wordmark.' : 'Sharp at any size. The small lines use the viewer’s system font.'; } },
+    { id: 'gif', name: 'GIF', hint: function () { return (animated() ? 'Plays almost everywhere: chats, email, READMEs.' : 'A still GIF.') + ' 256 colours, so soft gradients can band' + (seeThrough() ? ' and see-through edges look hard.' : '.'); } },
+    { id: 'apng', name: 'Animated PNG', when: animated, hint: 'Full colour and smooth transparency. Plays in browsers and on GitHub; some chat apps show only the first frame.' },
+    { id: 'webm', name: 'WebM video', when: function () { return animated() && !!videoType('webm'); }, hint: 'Video for websites and Discord. No transparency, so see-through parts get the theme colour.' },
+    { id: 'mp4', name: 'MP4 video', when: function () { return animated() && !!videoType('mp4'); }, hint: 'Video that plays almost anywhere, including X and LinkedIn. No transparency, so see-through parts get the theme colour.' },
+    { id: 'ico', name: 'ICO favicon', when: function () { return state.mode === 'logo'; }, hint: 'A favicon with 16, 32, 48 and 64 pixel sizes in one file.' },
+  ];
+
+  const formatSelect = $('export-format');
+  function paintFormats() {
+    const available = FORMATS.filter(function (f) { return !f.when || f.when(); });
+    const ids = available.map(function (f) { return f.id; }).join();
+    if (formatSelect.dataset.ids !== ids) {
+      formatSelect.innerHTML = '';
+      available.forEach(function (f) {
+        const o = document.createElement('option');
+        o.value = f.id;
+        o.textContent = f.name;
+        formatSelect.appendChild(o);
+      });
+      formatSelect.dataset.ids = ids;
+    }
+    // A format that is no longer offered, like video once the animation is off, falls back to PNG.
+    if (!available.some(function (f) { return f.id === state.format; })) state.format = 'png';
+    formatSelect.value = state.format;
+    const f = FORMATS.find(function (x) { return x.id === state.format; });
+    $('format-hint').textContent = typeof f.hint === 'function' ? f.hint() : f.hint;
+    $('download').textContent = 'Download ' + f.name;
+  }
+
+  function sizeText(bytes) {
+    return bytes < 1024 * 1024 ? Math.max(1, Math.round(bytes / 1024)) + ' KB' : Math.round(bytes / 1024 / 1024 * 10) / 10 + ' MB';
+  }
+
+  function rgbOf(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  function backdropColour() {
+    return B.resolveTheme(state.mode === 'logo' ? logoOptions() : options()).bg;
+  }
+
+  // An error whose message is written for people, so the status line can show it.
+  function problem(message) {
+    const err = new Error(message);
+    err.friendly = true;
+    return err;
+  }
+
+  function loadSvg(svg) {
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    return new Promise(function (resolve, reject) {
+      const img = new Image();
+      img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(problem('The image could not be drawn. Download the SVG instead.')); };
+      img.src = url;
+    });
+  }
+
+  function toBlob(canvas, type, quality) {
+    return new Promise(function (resolve, reject) {
+      try {
+        canvas.toBlob(function (b) {
+          if (b) resolve(b);
+          else reject(problem('That image is too big for this browser. Try 1× or a smaller size.'));
+        }, type, quality);
+      } catch (err) {
+        reject(problem('This browser will not save this image. Download the SVG instead.'));
+      }
+    });
+  }
+
+  function saved(blob, name) {
+    save(blob, name);
+    say('Saved ' + name + ' (' + sizeText(blob.size) + ').');
+  }
+
+  // PNG, JPG and WebP: the finished wordmark. JPG has no transparency, so it
+  // gets the theme colour behind it.
+  function still(type, ext, opaque) {
     const svg = currentSvg({ animate: 'none' });
     const size = sizeOf(svg);
-    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-    const img = new Image();
-    img.onload = function () {
+    const scale = state.pngScale;
+    return loadSvg(svg).then(function (img) {
       const canvas = document.createElement('canvas');
       canvas.width = size.width * scale;
       canvas.height = size.height * scale;
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      try {
-        canvas.toBlob(function (blob) {
-          if (!blob) { say('That PNG is too big for this browser. Try 1× or a smaller size.'); return; }
-          const name = fileName('png', scale, size);
-          save(blob, name);
-          say('Saved ' + name + '.');
-        }, 'image/png');
-      } catch (err) {
-        say('This browser will not turn this banner into a PNG. Download the SVG instead.');
-      }
-    };
-    img.onerror = function () {
-      URL.revokeObjectURL(url);
-      say('The PNG could not be drawn. Download the SVG instead.');
-    };
-    img.src = url;
+      const g = canvas.getContext('2d');
+      if (opaque) { g.fillStyle = backdropColour(); g.fillRect(0, 0, canvas.width, canvas.height); }
+      g.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return toBlob(canvas, type, 0.92);
+    }).then(function (blob) { saved(blob, fileName(ext, scale, size)); });
+  }
+
+  // The SVGs for an animated export: the whole loop when it repeats, or up to
+  // the finished wordmark when it plays once. Made up front, so changing
+  // settings mid-export can't mix them.
+  function animationSvgs() {
+    if (!animated()) return [currentSvg({ animate: 'none' })];
+    const svgs = [];
+    if (state.loopForever) {
+      const n = Math.max(2, Math.round(state.duration * ANIMATION_FPS));
+      for (let i = 0; i < n; i++) svgs.push(currentSvg({ frame: i / n }));
+    } else {
+      const n = Math.max(2, Math.round(state.duration * B.ANIMATION_END * ANIMATION_FPS));
+      for (let i = 0; i <= n; i++) svgs.push(currentSvg({ frame: i / n * B.ANIMATION_END }));
+    }
+    return svgs;
+  }
+
+  // Pixel size for an animated export, scaled down if it is over the limit.
+  function animationSize(size) {
+    const scale = Math.min(state.pngScale, Math.sqrt(MAX_ANIMATION_PIXELS / (size.width * size.height)));
+    return { width: Math.max(1, Math.round(size.width * scale)), height: Math.max(1, Math.round(size.height * scale)), scale: scale, capped: scale < state.pngScale };
+  }
+
+  // Draws each SVG in turn and hands its pixels to `each`.
+  function eachFrame(svgs, width, height, each, label) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const g = canvas.getContext('2d', { willReadFrequently: true });
+    let chain = Promise.resolve();
+    svgs.forEach(function (svg, i) {
+      chain = chain.then(function () {
+        if (label && svgs.length > 1) say(label + ' ' + (i + 1) + ' of ' + svgs.length + '…');
+        return loadSvg(svg);
+      }).then(function (img) {
+        g.clearRect(0, 0, width, height);
+        g.drawImage(img, 0, 0, width, height);
+        return each(g.getImageData(0, 0, width, height).data, i);
+      });
+    });
+    return chain;
+  }
+
+  function cappedNote(px) {
+    return px.capped ? ' It is capped at 2560 × 1440 pixels, so this one is ' + px.width + ' × ' + px.height + '.' : '';
+  }
+
+  // GIF: 255 colours picked from every fourth frame and the finished one.
+  // A see-through logo keeps see-through pixels; soft edges are blended onto
+  // its theme colour, since GIF has no partial transparency.
+  function exportGif() {
+    const svgs = animationSvgs();
+    const size = sizeOf(svgs[0]);
+    const px = animationSize(size);
+    const see = seeThrough();
+    const matte = rgbOf(backdropColour());
+    const palette = new E.Palette(255);
+    const sample = svgs.filter(function (s, i) { return i % 4 === 0; }).concat(svgs.length > 1 ? [currentSvg({ animate: 'none' })] : []);
+    const step = Math.max(1, Math.floor(px.width * px.height / 250000));
+    return eachFrame(sample, px.width, px.height, function (rgba) {
+      palette.add(E.flatten(rgba, matte, see), step);
+    }, 'Choosing colours from frame').then(function () {
+      palette.build();
+      const gif = E.createGif(px.width, px.height, { palette: palette, loop: state.loopForever && svgs.length > 1, transparent: see });
+      return eachFrame(svgs, px.width, px.height, function (rgba) {
+        gif.addFrame(E.flatten(rgba, matte, see), 1000 / ANIMATION_FPS);
+      }, 'Drawing frame').then(function () { return gif.finish(); });
+    }).then(function (bytes) {
+      saved(new Blob([bytes], { type: 'image/gif' }), fileName('gif', 1, px));
+      if (px.capped) say($('status').textContent + cappedNote(px));
+    });
+  }
+
+  function exportApng() {
+    const svgs = animationSvgs();
+    const px = animationSize(sizeOf(svgs[0]));
+    const apng = E.createApng(px.width, px.height, { loop: state.loopForever });
+    return eachFrame(svgs, px.width, px.height, function (rgba) {
+      return apng.addFrame(rgba, 1000 / ANIMATION_FPS);
+    }, 'Drawing frame').then(function () {
+      say('Packing the file…');
+      return apng.finish();
+    }).then(function (bytes) {
+      saved(new Blob([bytes], { type: 'image/png' }), fileName('png', 1, px, 'animated'));
+      if (px.capped) say($('status').textContent + cappedNote(px));
+    });
+  }
+
+  // ICO: the logo at 16, 32, 48 and 64 pixels, fitted into squares.
+  function exportIco() {
+    const svg = currentSvg({ animate: 'none' });
+    const size = sizeOf(svg);
+    return loadSvg(svg).then(function (img) {
+      return Promise.all([16, 32, 48, 64].map(function (s) {
+        const canvas = document.createElement('canvas');
+        canvas.width = s;
+        canvas.height = s;
+        const k = Math.min(s / size.width, s / size.height);
+        canvas.getContext('2d').drawImage(img, (s - size.width * k) / 2, (s - size.height * k) / 2, size.width * k, size.height * k);
+        return toBlob(canvas, 'image/png').then(function (b) { return b.arrayBuffer(); }).then(function (buf) {
+          return { size: s, png: new Uint8Array(buf) };
+        });
+      }));
+    }).then(function (images) {
+      saved(new Blob([E.createIco(images)], { type: 'image/x-icon' }), slug() + '-' + state.logoType + '-favicon-' + state.theme + '.ico');
+    });
+  }
+
+  const exporters = {
+    png: function () { return still('image/png', 'png'); },
+    jpg: function () { return still('image/jpeg', 'jpg', true); },
+    webp: function () { return still('image/webp', 'webp'); },
+    svg: function () {
+      const svg = currentSvg({ loop: false });
+      saved(new Blob([svg], { type: 'image/svg+xml' }), fileName('svg', 1, sizeOf(svg)));
+    },
+    gif: exportGif,
+    apng: exportApng,
+    webm: function () { return recordVideo('webm'); },
+    mp4: function () { return recordVideo('mp4'); },
+    ico: exportIco,
+  };
+
+  $('download').addEventListener('click', function () {
+    const button = $('download');
+    if (button.disabled) return;
+    button.disabled = true;
+    Promise.resolve().then(exporters[state.format] || exporters.png).catch(function (err) {
+      say(err && err.friendly ? err.message : 'That export did not work. Try 1× or a smaller size, or download the SVG.');
+    }).then(function () { button.disabled = false; });
   });
 
   // Records one play-through plus a short hold. Drawing a frame from its SVG
@@ -1461,12 +1695,17 @@ function start() {
     }
   }
 
-  $('download-video').addEventListener('click', function () {
-    if (typeof MediaRecorder === 'undefined' || !HTMLCanvasElement.prototype.captureStream) {
-      say('This browser cannot record video. Download the SVG instead.');
+  function recordVideo(container) {
+    return new Promise(function (done) { videoJob(container, done); });
+  }
+
+  function videoJob(container, done) {
+    const type = videoType(container);
+    if (!type) {
+      say('This browser cannot record ' + container.toUpperCase() + ' video. Try another format.');
+      done();
       return;
     }
-    const button = $('download-video');
     const fps = 30;
     const count = Math.max(2, Math.round(state.duration * B.ANIMATION_END * fps));
     const hold = Math.round(1.5 * fps);
@@ -1488,7 +1727,6 @@ function start() {
     let onTick = null;
     let finished = false;
     let last = null; // the final frame, kept for the hold
-    button.disabled = true;
 
     // Runs once, however the recording ends.
     function finish(message, blob, name) {
@@ -1500,9 +1738,9 @@ function start() {
         recorder.onstop = null;
         try { recorder.stop(); } catch (e) { /* already stopped */ }
       }
-      button.disabled = false;
       if (blob) save(blob, name);
       say(message);
+      done();
     }
 
     function fail(message) {
@@ -1604,17 +1842,17 @@ function start() {
 
     say('Drawing the first frames…');
     try {
-      const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(function (m) { return MediaRecorder.isTypeSupported(m); }) || '';
-      recorder = new MediaRecorder(canvas.captureStream(fps), type ? { mimeType: type, videoBitsPerSecond: 12e6 } : { videoBitsPerSecond: 12e6 });
+      recorder = new MediaRecorder(canvas.captureStream(fps), { mimeType: type, videoBitsPerSecond: 12e6 });
       const chunks = [];
       recorder.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
       recorder.onerror = fail('The recording stopped with an error. Try again, or download the SVG.');
       recorder.onstop = function () {
         if (!chunks.length) { finish('The recording came out empty. Try again, or download the SVG.'); return; }
-        const kind = recorder.mimeType || type || 'video/webm';
-        const name = fileName(/mp4/.test(kind) ? 'mp4' : 'webm', 1, { width: canvas.width, height: canvas.height });
+        const kind = recorder.mimeType || type;
+        const name = fileName(container, 1, { width: canvas.width, height: canvas.height });
+        const blob = new Blob(chunks, { type: kind });
         const note = capped ? ' Video is capped at 4K, so it is ' + canvas.width + ' × ' + canvas.height + '.' : '';
-        finish('Saved ' + name + '.' + note, new Blob(chunks, { type: kind }), name);
+        finish('Saved ' + name + ' (' + sizeText(blob.size) + ').' + note, blob, name);
       };
       stopTicker = startTicker(Math.round(1000 / fps / 2), function () {
         if (!onTick || finished) return;
@@ -1627,7 +1865,7 @@ function start() {
       return;
     }
     run(0).catch(fail('A frame could not be drawn. Download the SVG instead.'));
-  });
+  }
 
   $('copy-svg').addEventListener('click', function () { copy(currentSvg({ loop: false }), 'Copied the SVG.'); });
   $('copy-link').addEventListener('click', function () {
