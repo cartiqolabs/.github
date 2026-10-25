@@ -15,4 +15,6 @@ const banner = render({ width: 1500, height: 500, theme: 'light', motto: 'Honest
 const icon = renderLogo({ type: 'icon', background: 'solid', padding: 0.24, size: 512 });
 ```
 
+`docs/encoders.js` turns frames into GIF, animated PNG and ICO files without any libraries.
+
 With no options `render` draws the profile banner exactly. `renderLogo` makes a `wordmark`, an `icon` or a `lockup` (the wordmark with its two lines). The wordmark is drawn from the same strokes as the CARTIQO logo, with every letter A to Z, the numbers and `. - / ! '`. A full stop becomes the accent dot.
