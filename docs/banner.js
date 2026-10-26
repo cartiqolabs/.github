@@ -112,10 +112,18 @@
     corners: true,
     rule: true,
     border: true,
-    animate: 'none', // none, draw, rise or type
+    animate: 'none', // none, or an id from ANIMATION_KINDS
     duration: 4, // seconds for one loop
     loop: true, // false plays once and stops on the finished wordmark
     frame: null, // 0 to 1 through the loop draws that moment as a still
+    order: 'ltr', // ltr, rtl, centre, edges or random
+    stagger: null, // 0 (together) to 1 (one by one); empty uses the animation's own
+    easing: 'smooth', // smooth, snappy, springy or linear
+    exit: 'together', // together, or reverse to leave one by one
+    intensity: 1, // how far things move
+    animateLines: false,
+    animateRule: false,
+    animateCorners: false,
     measure: null,
   };
 
@@ -151,6 +159,13 @@
     duration: 4,
     loop: true,
     frame: null,
+    order: 'ltr',
+    stagger: null,
+    easing: 'smooth',
+    exit: 'together',
+    intensity: 1,
+    animateLines: false,
+    animateRule: false,
     measure: null,
   };
 
@@ -324,6 +339,8 @@
 
   function wordmarkShapes(placed, accent, indent, a) {
     const out = [];
+    const n = placed.length;
+    if (a && a.order === 'random') a.shuffle = shuffle(a.seed, n);
     placed.forEach(function (p, i) {
       const g = GLYPHS[p.c];
       const dot = '<circle cx="' + num(p.x + 4) + '" cy="43" r="4" fill="' + accent + '" stroke="none"/>';
@@ -332,48 +349,80 @@
         else g.d.forEach(function (d) { out.push(indent + '<path d="' + shift(d, p.x) + '"/>'); });
         return;
       }
-      const n = placed.length;
-      const draws = a.kind === 'draw' && !g.dot;
-      // Dashes restart on every subpath, so each stroke is drawn as its own path.
-      // Hidden strokes start a little past the dash, or round caps leave a dot.
-      const strokes = draws ? [].concat.apply([], g.d.map(function (d) { return d.split(/(?=M)/); })) : g.d;
-      const paths = g.dot ? [dot] : strokes.map(function (d) {
-        if (!draws) return '<path d="' + shift(d, p.x) + '"/>';
-        const m = motion(a, i, n, 'stroke-dashoffset', 1.05, 0);
-        return '<path d="' + shift(d.trim(), p.x) + '" pathLength="1" stroke-dasharray="1 2" stroke-dashoffset="' + num(m.value) + '">' + m.tag + '</path>';
-      });
-      let attrs = '';
-      let tags = '';
-      if (!draws) {
-        const fade = motion(a, i, n, 'opacity', 0, 1);
-        attrs += ' opacity="' + op(fade.value) + '"';
-        tags += fade.tag;
-      }
-      if (a.kind === 'rise') {
-        const lift = motion(a, i, n, 'transform', 14, 0);
-        attrs += ' transform="translate(0 ' + num(lift.value) + ')"';
-        tags += lift.tag;
-      }
-      const wrap = attrs || tags;
-      out.push(indent + (wrap ? '<g' + attrs + '>' + tags : '') + paths.join('') + (wrap ? '</g>' : ''));
+      if (!g.dot && !g.d.length) return; // a space
+      out.push(indent + letter(a, p, g, i, n, dot));
     });
     return out;
   }
 
-  // Animations run over a loop: a beat of nothing, the letters come in one
-  // after another, a hold, then they all go together. Played once, they stop
-  // as the last letter lands. A frame draws one moment of the loop as a still.
-  const ANIMATIONS = ['none', 'draw', 'rise', 'type'];
-  const LOOP = { start: 0.08, end: 0.5, out: 0.86, gone: 0.95 };
-  const EASE = [0.65, 0, 0.35, 1];
+  // Animations run over a loop: a beat of nothing, the letters come in (in
+  // the chosen order and stagger), a hold, then they leave. Played once, they
+  // stop as the last letter lands. A frame draws one moment of the loop as a
+  // still. Wave and Pulse have no coming and going: they move all through the
+  // loop, and keep looping even when played once.
+  const ANIMATION_KINDS = [
+    { id: 'draw', name: 'Draw the strokes', len: 0.5 },
+    { id: 'rise', name: 'Rise letter by letter', len: 0.4 },
+    { id: 'drop', name: 'Drop in', len: 0.4 },
+    { id: 'slide', name: 'Slide in', len: 0.45 },
+    { id: 'pop', name: 'Pop in', len: 0.35 },
+    { id: 'fade', name: 'Fade in', len: 0.5 },
+    { id: 'blur', name: 'Come into focus', len: 0.5 },
+    { id: 'type', name: 'Type letter by letter', len: 0.1 },
+    { id: 'flicker', name: 'Flicker on like neon', len: 0.35 },
+    { id: 'wave', name: 'Wave', loops: true },
+    { id: 'pulse', name: 'Pulse the dot', loops: true },
+  ];
+  const KINDS = {};
+  ANIMATION_KINDS.forEach(function (k) { KINDS[k.id] = k; });
+  const ANIMATIONS = ['none'].concat(ANIMATION_KINDS.map(function (k) { return k.id; }));
+  const ORDERS = ['ltr', 'rtl', 'centre', 'edges', 'random'];
+  const EASINGS = {
+    smooth: [0.65, 0, 0.35, 1],
+    snappy: [0.16, 1, 0.3, 1],
+    springy: [0.16, 1, 0.3, 1], // plus an overshoot, see comeAndGo
+    linear: [0, 0, 1, 1],
+  };
+  // Moments in the loop, as fractions of it. Leaving one by one starts
+  // earlier than leaving together, so the last letter is gone in time.
+  const LOOP = { start: 0.08, end: 0.5, out: 0.86, outEach: 0.72, gone: 0.95 };
+  const SPAN = LOOP.end - LOOP.start;
+  // When the lines, divider and corner marks come in.
+  const EXTRA = { corners: [0.02, 0.18], overline: [0.1, 0.28], rule: [0.14, 0.46], motto: [0.32, 0.5] };
 
-  function animationOf(o) {
-    if (ANIMATIONS.indexOf(o.animate) < 1) return null;
+  // The stagger an animation looks best with: 0 moves every letter together,
+  // 1 moves them strictly one after another.
+  function staggerDefault(id) {
+    const k = KINDS[id];
+    return k && k.len ? (1 - k.len) / 0.94 : 0.5;
+  }
+
+  // How much of the loop playing once covers.
+  function animationSpan(id) {
+    const k = KINDS[id];
+    return k && k.loops ? 1 : LOOP.end;
+  }
+
+  function animationOf(o, text) {
+    const kind = KINDS[o.animate];
+    if (!kind) return null;
+    const stagger = o.stagger == null ? staggerDefault(kind.id) : clamp(o.stagger, 0, 1, 0.5);
     return {
-      kind: o.animate,
+      kind: kind.id,
+      loops: !!kind.loops,
       once: o.loop === false,
       seconds: clamp(o.duration, 1, 30, 4),
       frame: o.frame == null ? null : clamp(o.frame, 0, 1, 1),
+      order: ORDERS.indexOf(o.order) >= 0 ? o.order : 'ltr',
+      len: SPAN * (1 - stagger * 0.94),
+      spline: EASINGS[o.easing] || EASINGS.smooth,
+      springy: o.easing === 'springy',
+      oneByOne: o.exit === 'reverse',
+      size: clamp(o.intensity, 0.25, 3, 1),
+      lines: !!o.animateLines,
+      rule: !!o.animateRule,
+      corners: !!o.animateCorners,
+      seed: String(text || ''),
     };
   }
 
@@ -382,52 +431,202 @@
     return 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t;
   }
 
-  function ease(x) {
+  function ease(x, spline) {
+    if (spline[0] === spline[1] && spline[2] === spline[3]) return x;
     let lo = 0;
     let hi = 1;
     for (let i = 0; i < 30; i++) {
       const mid = (lo + hi) / 2;
-      if (bezier(mid, EASE[0], EASE[2]) < x) lo = mid; else hi = mid;
+      if (bezier(mid, spline[0], spline[2]) < x) lo = mid; else hi = mid;
     }
-    return bezier((lo + hi) / 2, EASE[1], EASE[3]);
+    return bezier((lo + hi) / 2, spline[1], spline[3]);
   }
 
-  function sample(times, values, t) {
-    for (let i = 1; i < times.length; i++) {
-      if (t <= times[i]) {
-        const span = times[i] - times[i - 1];
-        const u = span > 0 ? ease((t - times[i - 1]) / span) : 1;
-        return values[i - 1] + (values[i] - values[i - 1]) * u;
+  // A value along `keys` ([time, value] pairs from 0 to 1) at time t.
+  function valueAt(keys, t, spline) {
+    for (let i = 1; i < keys.length; i++) {
+      if (t <= keys[i][0]) {
+        const span = keys[i][0] - keys[i - 1][0];
+        const u = span > 0 ? ease((t - keys[i - 1][0]) / span, spline) : 1;
+        return keys[i - 1][1] + (keys[i][1] - keys[i - 1][1]) * u;
       }
     }
-    return values[values.length - 1];
+    return keys[keys.length - 1][1];
   }
 
-  // One letter's value going from `from` to `to`: the still value for a frame
-  // (or the finished value), and the SMIL that animates it.
-  function motion(a, i, n, attr, from, to) {
-    const span = LOOP.end - LOOP.start;
-    const len = span * (a.kind === 'type' ? 0.1 : a.kind === 'draw' ? 0.5 : 0.4);
-    const start = LOOP.start + (n > 1 ? (span - len) / (n - 1) * i : 0);
-    const times = [0, start, start + len, LOOP.out, LOOP.gone, 1];
-    const values = [from, from, to, to, from, from];
-    if (a.frame != null) return { value: sample(times, values, a.frame), tag: '' };
-    let ts = times;
-    let vs = values;
-    if (a.once) {
-      ts = times.slice(0, 3).map(function (x) { return x / LOOP.end; });
-      vs = values.slice(0, 3);
-      if (ts[2] < 0.9999) { ts.push(1); vs.push(to); } else ts[2] = 1;
+  // Where letter i of n comes in the order: 0 is first, 1 is last.
+  function orderOf(a, i, n) {
+    if (n < 2) return 0;
+    const t = i / (n - 1);
+    if (a.order === 'rtl') return 1 - t;
+    if (a.order === 'centre') return Math.abs(t - 0.5) * 2;
+    if (a.order === 'edges') return 1 - Math.abs(t - 0.5) * 2;
+    if (a.order === 'random') return a.shuffle[i] / (n - 1);
+    return t;
+  }
+
+  // A fixed shuffle for the random order: the same text always shuffles the same way.
+  function shuffle(seed, n) {
+    const keys = [];
+    for (let i = 0; i < n; i++) {
+      let h = 2166136261;
+      const s = seed + '#' + i;
+      for (let j = 0; j < s.length; j++) { h ^= s.charCodeAt(j); h = Math.imul(h, 16777619); }
+      keys.push([h >>> 0, i]);
     }
-    const transform = attr === 'transform';
-    const list = vs.map(function (v) { return transform ? '0 ' + num(v) : num(v); }).join(';');
-    const common = ' values="' + list + '" dur="' + num(a.once ? a.seconds * LOOP.end : a.seconds) + 's" ' +
-      (a.once ? 'fill="freeze"' : 'repeatCount="indefinite"') +
-      ' keyTimes="' + ts.map(function (x) { return Math.round(x * 10000) / 10000; }).join(';') + '" calcMode="spline" keySplines="' + ts.slice(1).map(function () { return EASE.join(' '); }).join(';') + '"';
+    keys.sort(function (x, y) { return x[0] - y[0]; });
+    const rank = [];
+    keys.forEach(function (k, r) { rank[k[1]] = r; });
+    return rank;
+  }
+
+  // Keys for a value that comes in from `from` to `to` over [t0, t1] and goes
+  // back as the loop ends. `f` is the letter's place in the order, for leaving
+  // one by one; `bounce` lets springy easing overshoot.
+  function comeAndGo(a, f, t0, t1, from, to, bounce) {
+    const keys = [[0, from], [t0, from]];
+    if (bounce && a.springy) keys.push([t0 + (t1 - t0) * 0.6, to + (to - from) * 0.16]);
+    keys.push([t1, to]);
+    let out = LOOP.out;
+    let len = LOOP.gone - LOOP.out;
+    if (a.oneByOne && f != null) {
+      len = (t1 - t0) * (LOOP.gone - LOOP.outEach) / SPAN;
+      out = LOOP.outEach + (LOOP.gone - LOOP.outEach - len) * f;
+    }
+    keys.push([out, to], [out + len, from], [1, from]);
+    return keys;
+  }
+
+  // Turns keys into the value for a still (the moment a.frame, or the
+  // finished look) and the SMIL that plays them. `as` says how a value is
+  // written: a number, 'y' or 'x' for a translate, 's' for a scale, 'sx' for
+  // a horizontal scale. A `phase` starts a looping track part-way through.
+  function play(a, attr, keys, as, opts) {
+    const spline = (opts && opts.spline) || a.spline;
+    const phase = (opts && opts.phase) || 0;
+    if (a.frame != null) return { value: valueAt(keys, (a.frame + phase) % 1, spline), tag: '' };
+    const once = a.once && !a.loops;
+    let ks = keys;
+    if (once) {
+      ks = keys.filter(function (k) { return k[0] < LOOP.end; }).map(function (k) { return [k[0] / LOOP.end, k[1]]; });
+      ks.push([1, valueAt(keys, LOOP.end, spline)]);
+    }
+    const fmt = function (v) { return as === 'y' ? '0 ' + num(v) : as === 'x' ? num(v) + ' 0' : as === 'sx' ? num(v) + ' 1' : num(v); };
+    const times = ks.map(function (k) { return Math.round(k[0] * 10000) / 10000; });
+    const common = ' values="' + ks.map(function (k) { return fmt(k[1]); }).join(';') + '" dur="' + num(once ? a.seconds * LOOP.end : a.seconds) + 's" ' +
+      (once ? 'fill="freeze"' : 'repeatCount="indefinite"') + (phase ? ' begin="' + num(-phase * a.seconds) + 's"' : '') +
+      ' keyTimes="' + times.join(';') + '" calcMode="spline" keySplines="' + times.slice(1).map(function () { return spline.join(' '); }).join(';') + '"';
+    const type = as === 'y' || as === 'x' ? 'translate' : as === 's' || as === 'sx' ? 'scale' : null;
     return {
-      value: to,
-      tag: transform ? '<animateTransform attributeName="transform" type="translate"' + common + '/>' : '<animate attributeName="' + attr + '"' + common + '/>',
+      value: a.loops ? keys[0][1] : valueAt(keys, LOOP.end, spline),
+      tag: type ? '<animateTransform attributeName="transform" type="' + type + '"' + common + '/>' : '<animate attributeName="' + attr + '"' + common + '/>',
     };
+  }
+
+  // One animated letter (or the dot).
+  function letter(a, p, g, i, n, dot) {
+    const f = orderOf(a, i, n);
+    const t0 = LOOP.start + (SPAN - a.len) * f;
+    const t1 = t0 + a.len;
+    const cx = p.x + (g.dot ? 4 : g.w / 2);
+    const cy = g.dot ? 43 : 27;
+    const plain = function () { return g.dot ? dot : g.d.map(function (d) { return '<path d="' + shift(d, p.x) + '"/>'; }).join(''); };
+    let shapes = null;
+    let attrs = '';
+    let tags = '';
+    let before = '';
+
+    // Scales the letter around its middle.
+    function scaled(inner, m) {
+      return '<g transform="translate(' + num(cx) + ' ' + num(cy) + ')"><g transform="scale(' + num(m.value) + ')">' + m.tag +
+        '<g transform="translate(' + num(-cx) + ' ' + num(-cy) + ')">' + inner + '</g></g></g>';
+    }
+    function fade(keys, spline) {
+      const m = play(a, 'opacity', keys || comeAndGo(a, f, t0, t1, 0, 1), null, { spline: spline });
+      attrs += ' opacity="' + op(m.value) + '"';
+      tags += m.tag;
+    }
+    function move(as, from, keys, opts) {
+      const m = play(a, 'transform', keys || comeAndGo(a, f, t0, t1, from, 0, true), as, opts);
+      attrs += ' transform="translate(' + (as === 'x' ? num(m.value) + ' 0' : '0 ' + num(m.value)) + ')"';
+      tags += m.tag;
+    }
+
+    switch (a.kind) {
+      case 'draw':
+        if (g.dot) { fade(); break; }
+        // Dashes restart on every subpath, so each stroke is drawn as its own path.
+        // Hidden strokes start a little past the dash, or round caps leave a dot.
+        shapes = [].concat.apply([], g.d.map(function (d) { return d.split(/(?=M)/); })).map(function (d) {
+          const m = play(a, 'stroke-dashoffset', comeAndGo(a, f, t0, t1, 1.05, 0), null);
+          return '<path d="' + shift(d.trim(), p.x) + '" pathLength="1" stroke-dasharray="1 2" stroke-dashoffset="' + num(m.value) + '">' + m.tag + '</path>';
+        }).join('');
+        break;
+      case 'rise': fade(); move('y', 14 * a.size); break;
+      case 'drop': fade(); move('y', -18 * a.size); break;
+      case 'slide': fade(); move('x', -22 * a.size); break;
+      case 'pop':
+        fade();
+        shapes = scaled(plain(), play(a, 'transform', comeAndGo(a, f, t0, t1, Math.max(0, 1 - a.size), 1, true), 's'));
+        break;
+      case 'fade': fade(); break;
+      case 'blur': {
+        // Each letter gets its own blur, measured in the wordmark's units.
+        fade();
+        const id = 'ctq-focus-' + i;
+        const m = play(a, 'stdDeviation', comeAndGo(a, f, t0, t1, 5 * a.size, 0), null);
+        before = '<filter id="' + id + '" filterUnits="userSpaceOnUse" x="' + num(p.x - 30) + '" y="-25" width="' + num((g.dot ? 8 : g.w) + 60) + '" height="105">' +
+          '<feGaussianBlur stdDeviation="' + num(m.value) + '">' + m.tag + '</feGaussianBlur></filter>';
+        attrs += ' filter="url(#' + id + ')"';
+        break;
+      }
+      case 'type': fade(); break;
+      case 'flicker': {
+        // Stutters on like a neon tube, then leaves like the others.
+        const keys = [[0, 0], [t0, 0]];
+        const steps = [0.85, 0.1, 0.7, 0.15, 1, 0.45, 1];
+        steps.forEach(function (v, k) { keys.push([t0 + (t1 - t0) * (k + 1) / steps.length, v]); });
+        fade(keys.concat(comeAndGo(a, f, t0, t1, 0, 1).slice(-3)), EASINGS.linear);
+        break;
+      }
+      case 'wave': {
+        // A ripple that runs through the letters in the chosen order.
+        const amp = 5 * a.size;
+        move('y', 0, [[0, 0], [0.25, -amp], [0.5, 0], [0.75, amp], [1, 0]], { phase: f * 0.5, spline: EASINGS.smooth });
+        break;
+      }
+      case 'pulse':
+        // Only the dot moves: two beats, then a rest.
+        if (g.dot) {
+          shapes = scaled(dot, play(a, 'transform', [[0, 1], [0.06, 1 + 0.6 * a.size], [0.14, 1], [0.2, 1 + 0.35 * a.size], [0.3, 1], [1, 1]], 's', { spline: EASINGS.smooth }));
+        }
+        break;
+    }
+
+    const wrap = attrs || tags;
+    return before + (wrap ? '<g' + attrs + '>' + tags : '') + (shapes != null ? shapes : plain()) + (wrap ? '</g>' : '');
+  }
+
+  // The lines, divider and corner marks can come in too: corners first, then
+  // the line above, the divider and, as the last letter lands, the motto.
+  // Returns the markup that goes around the part.
+  function extra(a, part, centre) {
+    const on = a && !a.loops && (part === 'overline' || part === 'motto' ? a.lines : a[part]);
+    if (!on) return { open: '', close: '' };
+    const w = EXTRA[part];
+    const fade = play(a, 'opacity', comeAndGo(a, null, w[0], w[1], 0, 1), null);
+    const faded = '<g opacity="' + op(fade.value) + '">' + fade.tag;
+    if (part === 'corners') return { open: faded, close: '</g>' };
+    if (part === 'rule') {
+      // The divider grows out from its middle.
+      const m = play(a, 'transform', comeAndGo(a, null, w[0], w[1], 0, 1), 'sx');
+      return {
+        open: faded + '<g transform="translate(' + num(centre) + ' 272)"><g transform="scale(' + num(m.value) + ' 1)">' + m.tag + '<g transform="translate(' + num(-centre) + ' -272)">',
+        close: '</g></g></g></g>',
+      };
+    }
+    const lift = play(a, 'transform', comeAndGo(a, null, w[0], w[1], 8 * a.size, 0, true), 'y');
+    return { open: '<g opacity="' + op(fade.value) + '" transform="translate(0 ' + num(lift.value) + ')">' + fade.tag + lift.tag, close: '</g>' };
   }
 
   // Rough width of letter-spaced text, used when no real measure is passed in.
@@ -507,6 +706,7 @@
     const text = type === 'icon' ? o.mark : o.wordmark;
     const wm = layoutWordmark(text, clamp(o.tracking, -6, 40, 0));
     const box = inkBox(wm.placed, weight);
+    const anim = animationOf(o, text);
     const stroke = 'fill="none" stroke="' + t.ink + '" stroke-width="' + num(weight) + '" stroke-linecap="round" stroke-linejoin="round"';
     const body = [];
     let W;
@@ -537,14 +737,23 @@
       const k = Math.max(0.01, H - 2 * pad) / (bottom - top);
       W = Math.max(1, Math.ceil(blockWidth * k + 2 * pad));
       body.push('<g transform="translate(' + num(W / 2 - cx * k) + ' ' + num(pad - top * k) + ') scale(' + Math.round(k * 10000) / 10000 + ')">');
-      if (overline) body.push('  <text x="' + num(cx + 2.6) + '" y="78" fill="' + t.ink + '" fill-opacity="' + t.opacity.overline + '" font-family="' + esc(font) + '" font-size="13" font-weight="500" letter-spacing="5.2" text-anchor="middle">' + esc(overline) + '</text>');
+      if (overline) {
+        const e = extra(anim, 'overline');
+        body.push('  ' + e.open + '<text x="' + num(cx + 2.6) + '" y="78" fill="' + t.ink + '" fill-opacity="' + t.opacity.overline + '" font-family="' + esc(font) + '" font-size="13" font-weight="500" letter-spacing="5.2" text-anchor="middle">' + esc(overline) + '</text>' + e.close);
+      }
       if (wm.placed.length) {
         body.push('  <g transform="translate(' + num(cx - (box.left + box.right) / 2 * S) + ' 118) scale(' + S + ')" ' + stroke + '>');
-        body.push.apply(body, wordmarkShapes(wm.placed, accent, '    ', animationOf(o)));
+        body.push.apply(body, wordmarkShapes(wm.placed, accent, '    ', anim));
         body.push('  </g>');
       }
-      if (o.rule) body.push('  <path d="M' + num(cx - ruleWidth / 2) + ' 272 H' + num(cx + ruleWidth / 2) + '" stroke="' + t.ink + '" stroke-opacity="' + t.opacity.rule + '" stroke-width="1"/>');
-      if (motto) body.push('  <text x="' + num(cx + 3.2) + '" y="' + mottoY + '" fill="' + t.ink + '" fill-opacity="' + t.opacity.motto + '" font-family="' + esc(font) + '" font-size="18" font-weight="500" letter-spacing="6.4" text-anchor="middle">' + esc(motto) + '</text>');
+      if (o.rule) {
+        const e = extra(anim, 'rule', cx);
+        body.push('  ' + e.open + '<path d="M' + num(cx - ruleWidth / 2) + ' 272 H' + num(cx + ruleWidth / 2) + '" stroke="' + t.ink + '" stroke-opacity="' + t.opacity.rule + '" stroke-width="1"/>' + e.close);
+      }
+      if (motto) {
+        const e = extra(anim, 'motto');
+        body.push('  ' + e.open + '<text x="' + num(cx + 3.2) + '" y="' + mottoY + '" fill="' + t.ink + '" fill-opacity="' + t.opacity.motto + '" font-family="' + esc(font) + '" font-size="18" font-weight="500" letter-spacing="6.4" text-anchor="middle">' + esc(motto) + '</text>' + e.close);
+      }
       body.push('</g>');
       label = [String(o.wordmark || '').trim(), sentence(o.motto)].filter(Boolean).join(' ');
     } else {
@@ -561,7 +770,7 @@
         W = Math.max(1, Math.ceil(inkWidth * k + 2 * pad));
       }
       body.push('<g transform="translate(' + num(W / 2 - (box.left + box.right) / 2 * k) + ' ' + num(H / 2 - (box.top + box.bottom) / 2 * k) + ') scale(' + Math.round(k * 10000) / 10000 + ')" ' + stroke + '>');
-      body.push.apply(body, wordmarkShapes(wm.placed, accent, '  ', animationOf(o)));
+      body.push.apply(body, wordmarkShapes(wm.placed, accent, '  ', anim));
       body.push('</g>');
       label = String(text || '').trim();
     }
@@ -621,6 +830,7 @@
     const wm = layoutWordmark(o.wordmark, clamp(o.tracking, -6, 40, 0));
     const label = [String(o.wordmark || '').trim(), sentence(o.motto)].filter(Boolean).join(' ') || 'CARTIQO';
     const align = o.align === 'left' || o.align === 'right' ? o.align : 'center';
+    const anim = animationOf(o, o.wordmark);
 
     // Content size: the block takes up to 62% of the width and keeps the
     // base proportions on the height.
@@ -712,13 +922,16 @@
       const r = fx + fw - inset;
       const top = fy + inset;
       const bot = fy + fh - inset;
+      const e = extra(anim, 'corners');
       s.push('');
+      if (e.open) s.push('  ' + e.open);
       s.push('  <g fill="none" stroke="' + t.ink + '" stroke-opacity="' + opacity.corners + '" stroke-width="' + num(1.25 * Math.max(1, f)) + '" stroke-linecap="square">');
       s.push('    <path d="M' + num(l) + ' ' + num(top + arm) + ' V' + num(top) + ' H' + num(l + arm) + '"/>');
       s.push('    <path d="M' + num(r - arm) + ' ' + num(top) + ' H' + num(r) + ' V' + num(top + arm) + '"/>');
       s.push('    <path d="M' + num(r) + ' ' + num(bot - arm) + ' V' + num(bot) + ' H' + num(r - arm) + '"/>');
       s.push('    <path d="M' + num(l + arm) + ' ' + num(bot) + ' H' + num(l) + ' V' + num(bot - arm) + '"/>');
       s.push('  </g>');
+      if (e.close) s.push('  ' + e.close);
     }
 
     // Content is written in base coordinates and moved into place in one step.
@@ -762,25 +975,32 @@
     if (moved) s.push('  <g transform="translate(' + num(ex) + ' ' + num(ey) + ') scale(' + Math.round(k * 10000) / 10000 + ')">');
 
     if (overline) {
+      const e = extra(anim, 'overline');
+      if (e.open) s.push(pad + e.open);
       s.push(pad + '<text x="' + num(overX) + '" y="78" fill="' + t.ink + '" fill-opacity="' + opacity.overline + '"');
       s.push(pad + '      font-family="' + esc(font) + '"');
       s.push(pad + '      font-size="13" font-weight="500" letter-spacing="5.2" text-anchor="' + anchor + '">' + esc(overline) + '</text>');
+      if (e.close) s.push(pad + e.close);
       s.push('');
     }
     if (wm.placed.length) {
       s.push(pad + '<g transform="translate(' + num(wmX) + ' 118) scale(' + WORDMARK_SCALE + ')" fill="none" stroke="' + t.ink + '" stroke-width="' + num(weight) + '" stroke-linecap="round" stroke-linejoin="round">');
-      s.push.apply(s, wordmarkShapes(wm.placed, accent, pad + '  ', animationOf(o)));
+      s.push.apply(s, wordmarkShapes(wm.placed, accent, pad + '  ', anim));
       s.push(pad + '</g>');
       s.push('');
     }
     if (o.rule) {
-      s.push(pad + '<path d="M' + num(rule[0]) + ' 272 H' + num(rule[1]) + '" stroke="' + t.ink + '" stroke-opacity="' + opacity.rule + '" stroke-width="1"/>');
+      const e = extra(anim, 'rule', (rule[0] + rule[1]) / 2);
+      s.push(pad + e.open + '<path d="M' + num(rule[0]) + ' 272 H' + num(rule[1]) + '" stroke="' + t.ink + '" stroke-opacity="' + opacity.rule + '" stroke-width="1"/>' + e.close);
       s.push('');
     }
     if (motto) {
+      const e = extra(anim, 'motto');
+      if (e.open) s.push(pad + e.open);
       s.push(pad + '<text x="' + num(mottoX) + '" y="311" fill="' + t.ink + '" fill-opacity="' + opacity.motto + '"');
       s.push(pad + '      font-family="' + esc(font) + '"');
       s.push(pad + '      font-size="18" font-weight="500" letter-spacing="6.4" text-anchor="' + anchor + '">' + esc(motto) + '</text>');
+      if (e.close) s.push(pad + e.close);
     }
     if (moved) s.push('  </g>');
     s.push('</svg>');
@@ -815,7 +1035,12 @@
     LOGO_DEFAULTS: LOGO_DEFAULTS,
     CHARACTERS: Object.keys(GLYPHS).join(''),
     ANIMATIONS: ANIMATIONS,
+    ANIMATION_KINDS: ANIMATION_KINDS,
     ANIMATION_END: LOOP.end,
+    ORDERS: ORDERS,
+    EASINGS: Object.keys(EASINGS),
+    animationSpan: animationSpan,
+    staggerDefault: staggerDefault,
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.CartiqoBanner = api;

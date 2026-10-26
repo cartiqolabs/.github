@@ -464,20 +464,6 @@
         </label>
         <label class="check" style="height:36px"><input type="checkbox" data-key="caps"> All caps</label>
       </div>
-      <div class="two">
-        <label>Animation
-          <select data-key="animate">
-            <option value="none">None</option>
-            <option value="draw">Draw the strokes</option>
-            <option value="rise">Rise letter by letter</option>
-            <option value="type">Type letter by letter</option>
-          </select>
-        </label>
-        <label data-when="animate:!none" hidden>Loop length
-          <span class="range"><input type="range" data-key="duration" min="2" max="10" step="0.5"><output data-out="duration" data-unit="s"></output></span>
-        </label>
-      </div>
-      <span class="hint" id="animate-hint" data-when="animate:!none" hidden></span>
     </fieldset>
 
     <fieldset>
@@ -593,6 +579,57 @@
     </fieldset>
 
     <fieldset>
+      <legend>Animation</legend>
+      <label>Animation
+        <select data-key="animate" id="animate-select"></select>
+      </label>
+      <div class="group" data-when="animate:!none" hidden>
+        <label>Loop length
+          <span class="range"><input type="range" data-key="duration" min="2" max="10" step="0.5"><output data-out="duration" data-unit="s"></output></span>
+        </label>
+        <div class="two" data-when="animate:!pulse">
+          <label>Order
+            <select data-key="order">
+              <option value="ltr">Left to right</option>
+              <option value="rtl">Right to left</option>
+              <option value="centre">From the centre</option>
+              <option value="edges">From the edges</option>
+              <option value="random">Random</option>
+            </select>
+          </label>
+          <label data-when="animate:!wave">Easing
+            <select data-key="easing">
+              <option value="smooth">Smooth</option>
+              <option value="snappy">Snappy</option>
+              <option value="springy">Springy</option>
+              <option value="linear">Linear</option>
+            </select>
+          </label>
+        </div>
+        <label data-when="animate:!wave,animate:!pulse">Stagger
+          <span class="range"><input type="range" data-key="stagger" min="0" max="100" step="5"><output data-out="stagger" data-unit="%"></output></span>
+        </label>
+        <label data-when="animate:rise|animate:drop|animate:slide|animate:pop|animate:blur|animate:wave|animate:pulse">Movement
+          <span class="range"><input type="range" data-key="intensity" min="25" max="250" step="5"><output data-out="intensity" data-unit="%"></output></span>
+        </label>
+        <label data-when="animate:!wave,animate:!pulse">Loop ending
+          <select data-key="exit">
+            <option value="together">Fade out together</option>
+            <option value="reverse">Leave one by one</option>
+          </select>
+        </label>
+        <div class="field" data-when="mode:banner,animate:!wave,animate:!pulse|mode:logo,logoType:lockup,animate:!wave,animate:!pulse">Also animate
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-key="animateLines"> Lines</label>
+            <label class="check"><input type="checkbox" data-key="animateRule"> Divider</label>
+            <label class="check" data-when="mode:banner"><input type="checkbox" data-key="animateCorners"> Corner marks</label>
+          </div>
+        </div>
+      </div>
+      <span class="hint" id="animate-hint" data-when="animate:!none" hidden></span>
+    </fieldset>
+
+    <fieldset>
       <legend>Export</legend>
       <div class="two">
         <label>Format
@@ -680,6 +717,14 @@ function start() {
     caps: true,
     animate: 'none',
     duration: 4,
+    order: 'ltr',
+    stagger: 50, // reset to each animation's own when you pick one
+    easing: 'smooth',
+    exit: 'together',
+    intensity: 100,
+    animateLines: false,
+    animateRule: false,
+    animateCorners: false,
     theme: 'dark',
     bg: B.THEMES.dark.bg,
     ink: B.THEMES.dark.ink,
@@ -781,6 +826,14 @@ function start() {
       caps: state.caps,
       animate: state.animate,
       duration: state.duration,
+      order: state.order,
+      stagger: state.stagger / 100,
+      easing: state.easing,
+      exit: state.exit,
+      intensity: state.intensity / 100,
+      animateLines: state.animateLines,
+      animateRule: state.animateRule,
+      animateCorners: state.animateCorners,
       theme: state.theme,
       bg: state.bg,
       ink: state.ink,
@@ -819,6 +872,14 @@ function start() {
       caps: state.caps,
       animate: state.animate,
       duration: state.duration,
+      order: state.order,
+      stagger: state.stagger / 100,
+      easing: state.easing,
+      exit: state.exit,
+      intensity: state.intensity / 100,
+      animateLines: state.animateLines,
+      animateRule: state.animateRule,
+      animateCorners: state.animateCorners,
       theme: state.theme,
       bg: state.bg,
       ink: state.ink,
@@ -1111,6 +1172,20 @@ function start() {
   });
   sizeSelect.insertAdjacentHTML('beforeend', '<option value="custom">Custom size</option>');
 
+  const animateSelect = $('animate-select');
+  animateSelect.innerHTML = '<option value="none">None</option>';
+  [['Come in', false], ['Keep moving', true]].forEach(function (group) {
+    const og = document.createElement('optgroup');
+    og.label = group[0];
+    B.ANIMATION_KINDS.filter(function (k) { return !!k.loops === group[1]; }).forEach(function (k) {
+      const o = document.createElement('option');
+      o.value = k.id;
+      o.textContent = k.name;
+      og.appendChild(o);
+    });
+    animateSelect.appendChild(og);
+  });
+
   const themes = $('themes');
   Object.keys(B.THEMES).concat('custom').forEach(function (key) {
     const label = document.createElement('label');
@@ -1249,9 +1324,14 @@ function start() {
       b.classList.toggle('on', Number(b.dataset.px) === state.logoSize);
     });
 
-    $('animate-hint').textContent = reducedMotion.matches
-      ? 'Your device asks for less motion, so the preview stays still. SVG and video still animate; PNG is the finished frame.'
-      : 'The preview loops. SVG and video play once and stop on the finished wordmark; PNG is the finished frame.';
+    const keepsLooping = B.animationSpan(state.animate) === 1;
+    const animatedText = state.mode === 'logo' && state.logoType === 'icon' ? state.mark : state.wordmark;
+    $('animate-hint').textContent =
+      (state.animate === 'pulse' && animatedText.indexOf('.') < 0 ? 'Pulse the dot needs a full stop in the text, or there is no dot to pulse. ' : '') +
+      (reducedMotion.matches ? 'Your device asks for less motion, so the preview stays still. ' : 'The preview loops. ') +
+      (keepsLooping
+        ? 'This one keeps looping in SVGs too; video records one loop and PNG is the still wordmark.'
+        : 'SVG and video play once and stop on the finished wordmark; PNG is the finished frame.');
 
     hintFor(state.wordmark, $('wordmark-hint'), 'wordmark', "Letters, numbers, spaces and . - / ! '. A full stop becomes the dot.");
     hintFor(state.mark, $('mark-hint'), 'icon', 'One to three characters work best. A full stop becomes the dot.');
@@ -1341,6 +1421,12 @@ function start() {
     if (key === 'logoSize') {
       v = Math.round(v);
       if (!(v >= 16 && v <= 4096)) return;
+    }
+    // Each animation starts from the stagger it looks best with.
+    if (key === 'animate' && v !== state.animate && v !== 'none') {
+      state.stagger = Math.round(B.staggerDefault(v) * 100);
+      state.animate = v;
+      syncControls();
     }
     if (key === 'logoType' && v !== state.logoType) {
       state.logoBg = LOGO_TYPES[v].logoBg;
@@ -1551,8 +1637,8 @@ function start() {
       const n = Math.max(2, Math.round(state.duration * ANIMATION_FPS));
       for (let i = 0; i < n; i++) svgs.push(currentSvg({ frame: i / n }));
     } else {
-      const n = Math.max(2, Math.round(state.duration * B.ANIMATION_END * ANIMATION_FPS));
-      for (let i = 0; i <= n; i++) svgs.push(currentSvg({ frame: i / n * B.ANIMATION_END }));
+      const n = Math.max(2, Math.round(state.duration * B.animationSpan(state.animate) * ANIMATION_FPS));
+      for (let i = 0; i <= n; i++) svgs.push(currentSvg({ frame: i / n * B.animationSpan(state.animate) }));
     }
     return svgs;
   }
@@ -1707,7 +1793,7 @@ function start() {
       return;
     }
     const fps = 30;
-    const count = Math.max(2, Math.round(state.duration * B.ANIMATION_END * fps));
+    const count = Math.max(2, Math.round(state.duration * B.animationSpan(state.animate) * fps));
     const hold = Math.round(1.5 * fps);
     const size = sizeOf(currentSvg());
     const scale = Math.min(state.pngScale, Math.sqrt(MAX_VIDEO_PIXELS / (size.width * size.height)));
@@ -1721,7 +1807,7 @@ function start() {
     const batchSize = Math.max(4, Math.floor(VIDEO_BATCH_BYTES / (canvas.width * canvas.height * 4)));
     // Every frame's SVG is made now, so changing settings mid-recording can't mix them.
     const svgs = [];
-    for (let i = 0; i < count; i++) svgs.push(currentSvg({ frame: i / (count - 1) * B.ANIMATION_END }));
+    for (let i = 0; i < count; i++) svgs.push(currentSvg({ frame: i / (count - 1) * B.animationSpan(state.animate) }));
     let recorder = null;
     let stopTicker = null;
     let onTick = null;
