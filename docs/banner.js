@@ -58,6 +58,9 @@
     { id: 'discord-server', name: 'Discord server banner', width: 960, height: 540 },
     { id: 'discord-invite', name: 'Discord invite background', width: 1920, height: 1080 },
     { id: 'discord-profile', name: 'Discord profile banner', width: 1200, height: 480 },
+    // Discord shows an embed's image in a box about 400 wide and up to 300 tall;
+    // 2:1 fills the width and stays sharp on dense screens.
+    { id: 'discord-embed', name: 'Discord embed image', width: 1200, height: 600 },
     { id: 'email', name: 'Email header', width: 1200, height: 400 },
     { id: 'square', name: 'Square post', width: 1080, height: 1080 },
     { id: 'story', name: 'Story', width: 1080, height: 1920 },
