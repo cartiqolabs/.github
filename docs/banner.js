@@ -172,6 +172,48 @@
     measure: null,
   };
 
+  // Rank cards: a member's level, rank and XP, drawn at 960 × 300 and scaled
+  // with `scale`.
+  const RANK_DEFAULTS = {
+    username: 'Member',
+    subtitle: '', // e.g. the server's name
+    avatar: null, // a data: URL (the npm package also takes web addresses and files)
+    status: 'none', // none, online, idle, dnd, streaming or offline
+    level: 1,
+    rank: 1, // 0 leaves the rank out
+    xp: 0, // XP into this level
+    xpNeeded: 100, // XP this level needs in all
+    theme: 'dark',
+    bg: null,
+    ink: null,
+    accent: 'cartiqo',
+    fill: 'solid',
+    bg2: null,
+    angle: 135,
+    glow: 0.35,
+    glowAt: 'centre',
+    image: null,
+    dim: 0.6,
+    blur: 0,
+    pattern: 'grid',
+    patternSize: 1,
+    patternStrength: 1,
+    grain: 0,
+    border: true,
+    radius: 24,
+    weight: 4, // the stroke of the big numbers
+    watermark: false, // a small CARTIQO. in the corner
+    scale: 1,
+    animate: 'none', // none, or fill: the bar fills up
+    duration: 4,
+    loop: true,
+    frame: null,
+    measure: null,
+  };
+
+  // Discord's status colours.
+  const STATUS = { online: '#23A55A', idle: '#F0B232', dnd: '#F23F43', streaming: '#593695', offline: '#80848E' };
+
   // Everything is laid out on the 1280 x 360 GitHub banner and scaled from there.
   const BASE_W = 1280;
   const BASE_H = 360;
@@ -222,6 +264,7 @@
     '/': { w: 18, d: ['M0 47 L18 7'] },
     '!': { w: 0, l: 2, r: 2, d: ['M0 7 V35 M0 45 H0'] },
     "'": { w: 0, l: 2, r: 2, d: ['M0 7 V15'] },
+    '#': { w: 24, d: ['M10 11 L7 43 M20 11 L17 43 M2 21 H24 M0 33 H22'] },
     '.': { w: 8, dot: true },
     ' ': { w: 12, d: [] },
   };
@@ -815,6 +858,188 @@
     return s.join('\n') + '\n';
   }
 
+  // 1,250, then 1.2M and 3.4B.
+  function count(n) {
+    n = Math.max(0, Math.round(Number(n) || 0));
+    if (n >= 1e9) return String(Math.round(n / 1e8) / 10).replace(/\.0$/, '') + 'B';
+    if (n >= 1e6) return String(Math.round(n / 1e5) / 10).replace(/\.0$/, '') + 'M';
+    return n.toLocaleString('en-US');
+  }
+
+  // Text width in Geist, roughly, for cutting long names when no measure is given.
+  function textWidth(text, size, measure) {
+    if (measure) return measure(text, size, 0, FONTS.sans);
+    let w = 0;
+    Array.from(text).forEach(function (ch) {
+      w += /[ilIj.,:;'|!]/.test(ch) ? 0.28 : /[mwMW@]/.test(ch) ? 0.86 : /[A-Z0-9#]/.test(ch) ? 0.66 : ch.charCodeAt(0) > 0x2e80 ? 1 : 0.56;
+    });
+    return w * size;
+  }
+
+  function fitText(text, size, max, measure) {
+    if (textWidth(text, size, measure) <= max) return text;
+    const chars = Array.from(text);
+    while (chars.length > 1 && textWidth(chars.join('') + '…', size, measure) > max) chars.pop();
+    return chars.join('').trim() + '…';
+  }
+
+  // Text drawn with the wordmark's strokes, `h` tall, its ink ending at x.
+  function strokeText(text, right, top, h, color, weight, accent) {
+    const wm = layoutWordmark(text);
+    const box = inkBox(wm.placed, weight);
+    const s = h / 40;
+    const x = right - box.right * s;
+    return {
+      svg: '<g transform="translate(' + num(x) + ' ' + num(top - 7 * s) + ') scale(' + Math.round(s * 10000) / 10000 + ')" fill="none" stroke="' + color + '" stroke-width="' + num(weight) + '" stroke-linecap="round" stroke-linejoin="round">' + wordmarkShapes(wm.placed, accent, '').join('') + '</g>',
+      left: x + box.left * s,
+    };
+  }
+
+  function renderRankCard(options) {
+    const o = Object.assign({}, RANK_DEFAULTS, options);
+    const t = resolveTheme(o);
+    const opacity = t.opacity;
+    const accent = resolveAccent(o.accent, t);
+    const W = 960;
+    const H = 300;
+    const scale = clamp(o.scale, 0.25, 4, 1);
+    const R = clamp(o.radius, 0, 150, 24);
+    const weight = clamp(o.weight, 1, 10, 4);
+    const clean = function (s) { return String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f]/g, '').trim(); };
+    const name = clean(o.username) || 'Member';
+    const subtitle = clean(o.subtitle);
+    const level = Math.max(0, Math.floor(Number(o.level) || 0));
+    const rank = Math.max(0, Math.floor(Number(o.rank) || 0));
+    const xp = Math.max(0, Number(o.xp) || 0);
+    const next = Math.max(0, Number(o.xpNeeded) || 0);
+    const progress = next > 0 ? Math.min(1, xp / next) : 1;
+    const font = esc(FONTS.sans);
+    const label = name + ', level ' + level + (rank ? ', rank ' + rank : '');
+
+    const ground = backdrop(o, t, accent, W, H, Math.min(W / BASE_W, H / BASE_H));
+    const defs = ground.defs.slice();
+    const av = { x: 150, y: 150, r: 92 };
+    defs.push('<clipPath id="ctq-card"><rect width="' + W + '" height="' + H + '" rx="' + num(R) + '"/></clipPath>');
+    if (o.avatar) defs.push('<clipPath id="ctq-avatar"><circle cx="' + av.x + '" cy="' + av.y + '" r="' + av.r + '"/></clipPath>');
+
+    // Rank and level on the right, as big stroke numbers; the name gets what is left.
+    const x0 = 300;
+    const x1 = W - 48;
+    const levelNumber = strokeText(String(level), x1, 92, 44, accent, weight, accent);
+    const rankNumber = rank ? strokeText('#' + rank, levelNumber.left - 48, 92, 44, t.ink, weight, accent) : null;
+    const statsLeft = rankNumber ? rankNumber.left : levelNumber.left;
+    const shownName = fitText(name, 38, statsLeft - 32 - x0, o.measure);
+    const shownSubtitle = subtitle ? fitText(subtitle, 20, statsLeft - 32 - x0, o.measure) : '';
+    const small = 'font-family="' + font + '" font-size="12" font-weight="500" letter-spacing="3.6" text-anchor="end" fill="' + t.ink + '" fill-opacity="' + opacity.overline + '"';
+
+    // The bar. Filling it up is the one animation a card has.
+    const barX = x0;
+    const barW = x1 - x0;
+    const barY = 238;
+    const barH = 24;
+    const fullWidth = progress > 0 ? Math.max(barH, progress * barW) : 0;
+    let barFill = '<rect x="' + barX + '" y="' + barY + '" width="' + num(fullWidth) + '" height="' + barH + '" rx="' + barH / 2 + '" fill="' + accent + '"/>';
+    if (o.animate === 'fill' && fullWidth) {
+      const a = { loops: false, once: o.loop === false, seconds: clamp(o.duration, 1, 30, 4), frame: o.frame == null ? null : clamp(o.frame, 0, 1, 1), spline: EASINGS.smooth };
+      const m = play(a, 'width', comeAndGo(a, null, 0.1, 0.45, 0, fullWidth), null);
+      barFill = '<rect x="' + barX + '" y="' + barY + '" width="' + num(m.value) + '" height="' + barH + '" rx="' + barH / 2 + '" fill="' + accent + '">' + m.tag + '</rect>';
+    }
+    const left = next - xp > 0 ? count(next - xp) + ' XP to level ' + (level + 1) : 'Ready for level ' + (level + 1);
+
+    const s = [];
+    s.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + Math.round(W * scale) + '" height="' + Math.round(H * scale) + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">');
+    s.push('  <title>' + esc(label) + '</title>');
+    s.push('  <defs>');
+    defs.forEach(function (d) { s.push('    ' + d); });
+    s.push('  </defs>');
+    s.push('  <g clip-path="url(#ctq-card)">');
+    ground.layers.forEach(function (l) { s.push('    ' + l); });
+    s.push('  </g>');
+    if (o.border) s.push('  <rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="' + num(Math.max(0, R - 0.5)) + '" fill="none" stroke="' + t.ink + '" stroke-opacity="' + opacity.border + '"/>');
+
+    // The avatar in a ring, or the name's first letter when there is none.
+    s.push('  <circle cx="' + av.x + '" cy="' + av.y + '" r="' + (av.r + 7) + '" fill="none" stroke="' + accent + '" stroke-width="3"/>');
+    if (o.avatar) {
+      s.push('  <image href="' + esc(o.avatar) + '" x="' + (av.x - av.r) + '" y="' + (av.y - av.r) + '" width="' + av.r * 2 + '" height="' + av.r * 2 + '" preserveAspectRatio="xMidYMid slice" clip-path="url(#ctq-avatar)"/>');
+    } else {
+      s.push('  <circle cx="' + av.x + '" cy="' + av.y + '" r="' + av.r + '" fill="' + mix(t.bg, accent, 0.22) + '"/>');
+      s.push('  <text x="' + av.x + '" y="' + (av.y + 29) + '" font-family="' + font + '" font-size="84" font-weight="600" text-anchor="middle" fill="' + t.ink + '">' + esc(Array.from(name)[0].toUpperCase()) + '</text>');
+    }
+    if (STATUS[o.status]) {
+      s.push('  <circle cx="' + (av.x + 65) + '" cy="' + (av.y + 65) + '" r="19" fill="' + STATUS[o.status] + '" stroke="' + t.bg + '" stroke-width="7"/>');
+    }
+
+    s.push('  <text x="' + x0 + '" y="' + (shownSubtitle ? 120 : 136) + '" font-family="' + font + '" font-size="38" font-weight="600" fill="' + t.ink + '">' + esc(shownName) + '</text>');
+    if (shownSubtitle) s.push('  <text x="' + x0 + '" y="156" font-family="' + font + '" font-size="20" font-weight="500" fill="' + t.ink + '" fill-opacity="' + opacity.motto + '">' + esc(shownSubtitle) + '</text>');
+
+    s.push('  <text x="' + num(x1 + 3.6) + '" y="72" ' + small + '>LEVEL</text>');
+    s.push('  ' + levelNumber.svg);
+    if (rankNumber) {
+      s.push('  <text x="' + num(levelNumber.left - 48 + 3.6) + '" y="72" ' + small + '>RANK</text>');
+      s.push('  ' + rankNumber.svg);
+    }
+
+    s.push('  <text x="' + x0 + '" y="222" font-family="' + font + '" font-size="18" font-weight="500" fill="' + t.ink + '" fill-opacity="' + opacity.motto + '">' + esc(count(xp) + ' / ' + count(next) + ' XP') + '</text>');
+    s.push('  <text x="' + x1 + '" y="222" font-family="' + font + '" font-size="16" font-weight="500" text-anchor="end" fill="' + t.ink + '" fill-opacity="' + opacity.overline + '">' + esc(left) + '</text>');
+    s.push('  <rect x="' + barX + '" y="' + barY + '" width="' + barW + '" height="' + barH + '" rx="' + barH / 2 + '" fill="' + t.ink + '" fill-opacity="' + op(Math.max(0.08, opacity.grid * 2)) + '"/>');
+    if (fullWidth) s.push('  ' + barFill);
+
+    if (o.watermark) {
+      const mark = strokeText('CARTIQO.', x1, 277, 11, t.ink, 4, accent);
+      s.push('  <g opacity="0.35">' + mark.svg + '</g>');
+    }
+    s.push('</svg>');
+    return s.join('\n') + '\n';
+  }
+
+  // What a banner or rank card sits on: its fill, image, pattern and grain,
+  // as <defs> entries and the layers that use them. `f` scales the pattern.
+  function backdrop(o, t, accent, W, H, f) {
+    const defs = [];
+    const layers = [];
+    const pattern = PATTERNS.indexOf(o.pattern) >= 0 ? o.pattern : 'grid';
+    const cell = 40 * f * clamp(o.patternSize, 0.25, 4, 1) * (pattern === 'diagonal' ? 0.5 : 1);
+    const patternStrength = t.opacity.grid * clamp(o.patternStrength, 0, 10, 1);
+    const fill = o.fill === 'image' && !o.image ? 'solid' : o.fill;
+    const blur = fill === 'image' ? clamp(o.blur, 0, 40, 0) * f : 0;
+    const grain = clamp(o.grain, 0, 1, 0);
+    const patternId = 'ctq-grid-' + t.key;
+
+    if (fill === 'gradient') defs.push.apply(defs, gradientDef(W, H, o.angle, t.bg, hex(o.bg2, mix(t.bg, accent, 0.35))));
+    if (fill === 'glow') {
+      const at = GLOW_AT[o.glowAt] || GLOW_AT.centre;
+      const r = Math.max(W, H) * (o.glowAt === 'centre' || !GLOW_AT[o.glowAt] ? 0.5 : 0.65);
+      defs.push('<radialGradient id="ctq-glow" gradientUnits="userSpaceOnUse" cx="' + num(W * at[0]) + '" cy="' + num(H * at[1]) + '" r="' + num(r) + '">');
+      defs.push('  <stop offset="0" stop-color="' + accent + '" stop-opacity="' + op(clamp(o.glow, 0, 1, 0.35)) + '"/>');
+      defs.push('  <stop offset="1" stop-color="' + accent + '" stop-opacity="0"/>');
+      defs.push('</radialGradient>');
+    }
+    if (blur) {
+      defs.push('<filter id="ctq-blur" x="0" y="0" width="1" height="1"><feGaussianBlur stdDeviation="' + num(blur) + '"/></filter>');
+    }
+    if (pattern !== 'none') {
+      defs.push('<pattern id="' + patternId + '" width="' + num(cell) + '" height="' + num(cell) + '" patternUnits="userSpaceOnUse">');
+      defs.push('  ' + patternTile(pattern, cell, t.ink, patternStrength));
+      defs.push('</pattern>');
+    }
+    if (grain) {
+      defs.push('<filter id="ctq-grain" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>');
+    }
+
+    layers.push('<rect width="' + W + '" height="' + H + '" fill="' + t.bg + '"/>');
+    if (fill === 'gradient') layers.push('<rect width="' + W + '" height="' + H + '" fill="url(#ctq-fill)"/>');
+    if (fill === 'glow') layers.push('<rect width="' + W + '" height="' + H + '" fill="url(#ctq-glow)"/>');
+    if (fill === 'image') {
+      // A blurred image is drawn a little larger so its edges stay sharp.
+      const b = blur * 3;
+      layers.push('<image href="' + esc(o.image) + '" x="' + num(-b) + '" y="' + num(-b) + '" width="' + num(W + 2 * b) + '" height="' + num(H + 2 * b) + '" preserveAspectRatio="xMidYMid slice"' + (blur ? ' filter="url(#ctq-blur)"' : '') + '/>');
+      layers.push('<rect width="' + W + '" height="' + H + '" fill="' + t.bg + '" fill-opacity="' + op(clamp(o.dim, 0, 1, 0.6)) + '"/>');
+    }
+    if (pattern !== 'none') layers.push('<rect width="' + W + '" height="' + H + '" fill="url(#' + patternId + ')"/>');
+    if (grain) layers.push('<rect width="' + W + '" height="' + H + '" filter="url(#ctq-grain)" opacity="' + op(grain * 0.3) + '"/>');
+    return { defs: defs, layers: layers };
+  }
+
   function render(options) {
     const o = Object.assign({}, DEFAULTS, options);
     if (o.grid === false) o.pattern = 'none';
@@ -867,35 +1092,8 @@
     const fy = (H - fh) / 2;
     const inset = 40 * f;
     const arm = 22 * f;
-    const pattern = PATTERNS.indexOf(o.pattern) >= 0 ? o.pattern : 'grid';
-    const cell = 40 * f * clamp(o.patternSize, 0.25, 4, 1) * (pattern === 'diagonal' ? 0.5 : 1);
-    const patternStrength = opacity.grid * clamp(o.patternStrength, 0, 10, 1);
-    const fill = o.fill === 'image' && !o.image ? 'solid' : o.fill;
-    const blur = fill === 'image' ? clamp(o.blur, 0, 40, 0) * f : 0;
-    const grain = clamp(o.grain, 0, 1, 0);
-    const patternId = 'ctq-grid-' + t.key;
-
-    const defs = [];
-    if (fill === 'gradient') defs.push.apply(defs, gradientDef(W, H, o.angle, t.bg, hex(o.bg2, mix(t.bg, accent, 0.35))));
-    if (fill === 'glow') {
-      const at = GLOW_AT[o.glowAt] || GLOW_AT.centre;
-      const r = Math.max(W, H) * (o.glowAt === 'centre' || !GLOW_AT[o.glowAt] ? 0.5 : 0.65);
-      defs.push('<radialGradient id="ctq-glow" gradientUnits="userSpaceOnUse" cx="' + num(W * at[0]) + '" cy="' + num(H * at[1]) + '" r="' + num(r) + '">');
-      defs.push('  <stop offset="0" stop-color="' + accent + '" stop-opacity="' + op(clamp(o.glow, 0, 1, 0.35)) + '"/>');
-      defs.push('  <stop offset="1" stop-color="' + accent + '" stop-opacity="0"/>');
-      defs.push('</radialGradient>');
-    }
-    if (blur) {
-      defs.push('<filter id="ctq-blur" x="0" y="0" width="1" height="1"><feGaussianBlur stdDeviation="' + num(blur) + '"/></filter>');
-    }
-    if (pattern !== 'none') {
-      defs.push('<pattern id="' + patternId + '" width="' + num(cell) + '" height="' + num(cell) + '" patternUnits="userSpaceOnUse">');
-      defs.push('  ' + patternTile(pattern, cell, t.ink, patternStrength));
-      defs.push('</pattern>');
-    }
-    if (grain) {
-      defs.push('<filter id="ctq-grain" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>');
-    }
+    const ground = backdrop(o, t, accent, W, H, f);
+    const defs = ground.defs;
 
     const s = [];
     s.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">');
@@ -907,17 +1105,7 @@
       s.push('  </defs>');
       s.push('');
     }
-    s.push('  <rect width="' + W + '" height="' + H + '" fill="' + t.bg + '"/>');
-    if (fill === 'gradient') s.push('  <rect width="' + W + '" height="' + H + '" fill="url(#ctq-fill)"/>');
-    if (fill === 'glow') s.push('  <rect width="' + W + '" height="' + H + '" fill="url(#ctq-glow)"/>');
-    if (fill === 'image') {
-      // A blurred image is drawn a little larger so its edges stay sharp.
-      const b = blur * 3;
-      s.push('  <image href="' + esc(o.image) + '" x="' + num(-b) + '" y="' + num(-b) + '" width="' + num(W + 2 * b) + '" height="' + num(H + 2 * b) + '" preserveAspectRatio="xMidYMid slice"' + (blur ? ' filter="url(#ctq-blur)"' : '') + '/>');
-      s.push('  <rect width="' + W + '" height="' + H + '" fill="' + t.bg + '" fill-opacity="' + op(clamp(o.dim, 0, 1, 0.6)) + '"/>');
-    }
-    if (pattern !== 'none') s.push('  <rect width="' + W + '" height="' + H + '" fill="url(#' + patternId + ')"/>');
-    if (grain) s.push('  <rect width="' + W + '" height="' + H + '" filter="url(#ctq-grain)" opacity="' + op(grain * 0.3) + '"/>');
+    ground.layers.forEach(function (l) { s.push('  ' + l); });
     if (o.border) s.push('  <rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" fill="none" stroke="' + t.ink + '" stroke-opacity="' + opacity.border + '"/>');
 
     if (o.corners) {
@@ -1022,6 +1210,7 @@
   const api = {
     render: render,
     renderLogo: renderLogo,
+    renderRankCard: renderRankCard,
     wordmark: wordmark,
     layoutWordmark: layoutWordmark,
     resolveTheme: resolveTheme,
@@ -1036,6 +1225,8 @@
     DEFAULTS: DEFAULTS,
     LOGO_TYPES: LOGO_TYPES,
     LOGO_DEFAULTS: LOGO_DEFAULTS,
+    RANK_DEFAULTS: RANK_DEFAULTS,
+    STATUSES: ['none'].concat(Object.keys(STATUS)),
     CHARACTERS: Object.keys(GLYPHS).join(''),
     ANIMATIONS: ANIMATIONS,
     ANIMATION_KINDS: ANIMATION_KINDS,

@@ -1,0 +1,41 @@
+{
+  "name": "cartiqo-brand",
+  "version": "0.1.0",
+  "description": "CARTIQO banners, logos and rank cards as SVG, PNG, GIF and animated PNG, from code, the command line or an HTTP API.",
+  "license": "MIT",
+  "author": "CARTIQO Labs (https://cartiqolabs.com)",
+  "homepage": "https://cartiqolabs.github.io/.github/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cartiqolabs/.github.git",
+    "directory": "packages/brand"
+  },
+  "bugs": "https://github.com/cartiqolabs/.github/issues",
+  "keywords": ["cartiqo", "banner", "logo", "rank card", "discord", "svg", "png", "gif"],
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "cartiqo-brand": "bin/cartiqo-brand.js"
+  },
+  "files": ["index.js", "index.mjs", "index.d.ts", "lib", "bin", "fonts", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "sync": "node scripts/sync.js",
+    "test": "node --test test/brand.test.js",
+    "prepack": "node scripts/sync.js --check",
+    "examples": "node scripts/examples.js"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2"
+  }
+}

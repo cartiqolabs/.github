@@ -318,7 +318,10 @@
         pending = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, delay: delay, disposal: 2, see: true };
         pending.pixels = crop(idx, x0, y0, pending.w, pending.h, null);
       } else if (!prev) {
-        pending = { x: 0, y: 0, w: width, h: height, delay: delay, disposal: 1, see: false, pixels: idx };
+        // See-through pixels that never change (a rank card's round corners)
+        // can stay in this mode; only things that turn see-through later need
+        // `transparent`.
+        pending = { x: 0, y: 0, w: width, h: height, delay: delay, disposal: 1, see: idx.indexOf(T) >= 0, pixels: idx };
       } else {
         const w = x1 - x0 + 1;
         const h = y1 - y0 + 1;

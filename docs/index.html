@@ -237,6 +237,10 @@
   .range output { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: var(--muted); min-width: 44px; text-align: right; font-weight: 400; }
   input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
 
+  .link-row { display: flex; gap: 8px; }
+  .link-row input { flex: 1; min-width: 0; }
+  .link-row button { flex: none; }
+  .hint a { color: var(--ink); }
   .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
   .check { display: flex; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
   input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
@@ -353,6 +357,7 @@
     <span class="name">Banners and logos</span>
   </a>
   <nav>
+    <a href="https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme">npm and API</a>
     <a href="https://github.com/cartiqolabs/.github/tree/main/docs">Source</a>
     <a href="https://discord.gg/A6b4bTTaeJ">Discord</a>
   </nav>
@@ -364,6 +369,7 @@
       <div class="segmented" role="radiogroup" aria-label="What to make">
         <label><input type="radio" name="mode" data-key="mode" value="banner"><span>Banner</span></label>
         <label><input type="radio" name="mode" data-key="mode" value="logo"><span>Logo</span></label>
+        <label><input type="radio" name="mode" data-key="mode" value="rank"><span>Rank card</span></label>
       </div>
     </fieldset>
 
@@ -431,6 +437,53 @@
       </label>
     </fieldset>
 
+    <fieldset data-when="mode:rank" hidden>
+      <legend>Rank card</legend>
+      <label>Name <input type="text" data-key="rankName" maxlength="40" spellcheck="false"></label>
+      <label>Second line <input type="text" data-key="rankSubtitle" maxlength="60" spellcheck="false" placeholder="For example the server’s name"></label>
+      <div class="field">Avatar
+        <div class="two">
+          <button type="button" id="avatar-pick">Choose picture</button>
+          <button type="button" id="avatar-remove">Remove</button>
+        </div>
+        <input type="file" id="avatar-file" accept="image/*" hidden>
+        <div class="link-row">
+          <input type="text" id="avatar-url" placeholder="Or paste a link to a picture" spellcheck="false" aria-label="Link to a picture">
+          <button type="button" id="avatar-load">Use link</button>
+        </div>
+        <span class="hint" id="avatar-hint"></span>
+      </div>
+      <label>Status
+        <select data-key="rankStatus">
+          <option value="none">None</option>
+          <option value="online">Online</option>
+          <option value="idle">Idle</option>
+          <option value="dnd">Do not disturb</option>
+          <option value="streaming">Streaming</option>
+          <option value="offline">Offline</option>
+        </select>
+      </label>
+      <div class="two">
+        <label>Level <input type="number" data-key="rankLevel" min="0" max="100000" step="1" inputmode="numeric"></label>
+        <label>Rank <input type="number" data-key="rankRank" min="0" max="10000000" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="two">
+        <label>XP <input type="number" data-key="rankXp" min="0" step="1" inputmode="numeric"></label>
+        <label>XP needed <input type="number" data-key="rankNeeded" min="0" step="1" inputmode="numeric"></label>
+      </div>
+      <span class="hint">XP is how far into this level the member is; XP needed is what the whole level takes. A rank of 0 leaves the rank out.</span>
+      <label>Corner radius
+        <span class="range"><input type="range" data-key="rankRadius" min="0" max="60" step="2"><output data-out="rankRadius" data-unit=""></output></span>
+      </label>
+      <div class="checks">
+        <label class="check"><input type="checkbox" data-key="rankFill"> Fill the XP bar</label>
+        <label class="check"><input type="checkbox" data-key="rankWatermark"> CARTIQO mark</label>
+      </div>
+      <label data-when="rankFill:true" hidden>Loop length
+        <span class="range"><input type="range" data-key="duration" min="2" max="10" step="0.5"><output data-out="duration" data-unit="s"></output></span>
+      </label>
+    </fieldset>
+
     <fieldset data-when="mode:banner">
       <legend>Size</legend>
       <label>Format
@@ -442,9 +495,9 @@
       </div>
     </fieldset>
 
-    <fieldset>
+    <fieldset data-when="mode:!rank">
       <legend>Text</legend>
-      <label data-when="mode:banner|logoType:wordmark|logoType:lockup">Wordmark
+      <label data-when="mode:banner|mode:logo,logoType:wordmark|mode:logo,logoType:lockup">Wordmark
         <input type="text" class="caps" data-key="wordmark" spellcheck="false" maxlength="40">
         <span class="hint" id="wordmark-hint"></span>
       </label>
@@ -452,9 +505,9 @@
         <input type="text" class="caps" data-key="mark" spellcheck="false" maxlength="6">
         <span class="hint" id="mark-hint"></span>
       </label>
-      <label data-when="mode:banner|logoType:lockup">Line above <input type="text" data-key="overline" spellcheck="false" maxlength="60"></label>
-      <label data-when="mode:banner|logoType:lockup">Motto <input type="text" data-key="motto" spellcheck="false" maxlength="60"></label>
-      <div class="two" data-when="mode:banner|logoType:lockup">
+      <label data-when="mode:banner|mode:logo,logoType:lockup">Line above <input type="text" data-key="overline" spellcheck="false" maxlength="60"></label>
+      <label data-when="mode:banner|mode:logo,logoType:lockup">Motto <input type="text" data-key="motto" spellcheck="false" maxlength="60"></label>
+      <div class="two" data-when="mode:banner|mode:logo,logoType:lockup">
         <label>Font for the lines
           <select data-key="font">
             <option value="sans">Sans</option>
@@ -481,16 +534,16 @@
       </div>
     </fieldset>
 
-    <fieldset data-when="mode:banner">
+    <fieldset data-when="mode:banner|mode:rank">
       <legend>Background</legend>
-      <div class="segmented" role="radiogroup" aria-label="Fill" data-when="mode:banner">
+      <div class="segmented" role="radiogroup" aria-label="Fill">
         <label><input type="radio" name="fill" data-key="fill" value="solid"><span>Solid</span></label>
         <label><input type="radio" name="fill" data-key="fill" value="gradient"><span>Gradient</span></label>
         <label><input type="radio" name="fill" data-key="fill" value="glow"><span>Glow</span></label>
         <label><input type="radio" name="fill" data-key="fill" value="image"><span>Image</span></label>
       </div>
 
-      <div class="group" data-when="mode:banner,fill:gradient" hidden>
+      <div class="group" data-when="mode:!logo,fill:gradient" hidden>
         <div class="field">
           <span class="label-row">Fades to <button type="button" class="link-button bg2-auto">Use automatic</button></span>
           <button type="button" class="color-button" data-color="bg2"></button>
@@ -500,7 +553,7 @@
         </label>
       </div>
 
-      <div class="group" data-when="mode:banner,fill:glow" hidden>
+      <div class="group" data-when="mode:!logo,fill:glow" hidden>
         <label>Strength
           <span class="range"><input type="range" data-key="glow" min="5" max="100" step="5"><output data-out="glow" data-unit="%"></output></span>
         </label>
@@ -516,7 +569,7 @@
         <span class="hint">The glow uses the dot colour.</span>
       </div>
 
-      <div class="group" data-when="mode:banner,fill:image" hidden>
+      <div class="group" data-when="mode:!logo,fill:image" hidden>
         <div class="two">
           <button type="button" id="image-pick">Choose image</button>
           <button type="button" id="image-remove">Remove</button>
@@ -567,18 +620,18 @@
       <label>Stroke weight
         <span class="range"><input type="range" data-key="weight" min="2" max="7" step="0.5"><output data-out="weight" data-unit=""></output></span>
       </label>
-      <label>Letter spacing
+      <label data-when="mode:!rank">Letter spacing
         <span class="range"><input type="range" data-key="tracking" min="-4" max="16" step="1"><output data-out="tracking" data-unit=""></output></span>
       </label>
       <div class="checks">
         <label class="check" data-when="mode:banner"><input type="checkbox" data-key="corners"> Corner marks</label>
-        <label class="check" data-when="mode:banner|logoType:lockup"><input type="checkbox" data-key="rule"> Divider</label>
-        <label class="check" data-when="mode:banner"><input type="checkbox" data-key="border"> Border</label>
+        <label class="check" data-when="mode:banner|mode:logo,logoType:lockup"><input type="checkbox" data-key="rule"> Divider</label>
+        <label class="check" data-when="mode:banner|mode:rank"><input type="checkbox" data-key="border"> Border</label>
         <label class="check" id="safe-toggle"><input type="checkbox" data-key="safeGuide"> Show safe area</label>
       </div>
     </fieldset>
 
-    <fieldset>
+    <fieldset data-when="mode:!rank">
       <legend>Animation</legend>
       <label>Animation
         <select data-key="animate" id="animate-select"></select>
@@ -642,13 +695,20 @@
           </select>
         </label>
       </div>
-      <label class="check" data-when="format:gif,animate:!none|format:apng" hidden><input type="checkbox" data-key="loopForever"> Loop forever</label>
+      <label class="check" data-when="format:gif,mode:!rank,animate:!none|format:gif,mode:rank,rankFill:true|format:apng" hidden><input type="checkbox" data-key="loopForever"> Loop forever</label>
       <span class="hint" id="format-hint"></span>
       <button type="button" class="primary" id="download">Download PNG</button>
       <div class="row">
         <button type="button" id="copy-svg">Copy SVG</button>
         <button type="button" id="copy-link">Copy link</button>
         <button type="button" id="reset">Start over</button>
+      </div>
+      <div class="field">Use it in code
+        <div class="two">
+          <button type="button" id="copy-code">Copy code</button>
+          <button type="button" id="copy-api">Copy API URL</button>
+        </div>
+        <span class="hint">Makes this from JavaScript or a web address with the <a href="https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme">cartiqo-brand</a> package.</span>
       </div>
       <p class="status" id="status" role="status" aria-live="polite"></p>
     </fieldset>
@@ -764,6 +824,17 @@ function start() {
     logoPatternSize: 100,
     logoPatternStrength: 100,
     logoGrain: 0,
+    // Rank cards start with sample data so there is something to look at.
+    rankName: 'Nova',
+    rankSubtitle: 'CARTIQO Chat',
+    rankStatus: 'online',
+    rankLevel: 12,
+    rankRank: 3,
+    rankXp: 1250,
+    rankNeeded: 2000,
+    rankRadius: 24,
+    rankFill: false,
+    rankWatermark: false,
   };
   // Each logo type starts from its usual background and padding.
   const LOGO_TYPES = {
@@ -774,6 +845,7 @@ function start() {
   const LOGO_SIZES = [64, 128, 256, 512, 1024];
   const state = Object.assign({}, DEFAULTS, readHash());
   let image = null; // a data: URL, never put in the link
+  let avatar = null; // the rank card's picture, also a data: URL kept out of the link
 
   // The link carries every setting that differs from the defaults.
   function readHash() {
@@ -902,8 +974,50 @@ function start() {
     };
   }
 
+  function rankOptions() {
+    return {
+      username: state.rankName,
+      subtitle: state.rankSubtitle,
+      avatar: avatar,
+      status: state.rankStatus,
+      level: state.rankLevel,
+      rank: state.rankRank,
+      xp: state.rankXp,
+      xpNeeded: state.rankNeeded,
+      theme: state.theme,
+      bg: state.bg,
+      ink: state.ink,
+      accent: state.accent,
+      fill: state.fill,
+      bg2: state.bg2 || null,
+      angle: state.angle,
+      glow: state.glow / 100,
+      glowAt: state.glowAt,
+      image: image,
+      dim: state.dim / 100,
+      blur: state.blur,
+      pattern: state.pattern,
+      patternSize: state.patternSize / 100,
+      patternStrength: state.patternStrength / 100,
+      grain: state.grain / 100,
+      border: state.border,
+      radius: state.rankRadius,
+      weight: state.weight,
+      watermark: state.rankWatermark,
+      animate: state.rankFill ? 'fill' : 'none',
+      duration: state.duration,
+      measure: measure,
+    };
+  }
+
   function currentSvg(extra) {
+    if (state.mode === 'rank') return B.renderRankCard(Object.assign(rankOptions(), extra));
     return state.mode === 'logo' ? B.renderLogo(Object.assign(logoOptions(), extra)) : B.render(Object.assign(options(), extra));
+  }
+
+  // How much of the loop an export that plays once covers.
+  function spanNow() {
+    return state.mode === 'rank' ? B.ANIMATION_END : B.animationSpan(state.animate);
   }
 
   // Logos get their width from their content, so the size comes from the SVG.
@@ -925,13 +1039,14 @@ function start() {
   }
 
   function slug() {
-    return state.wordmark.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cartiqo';
+    const text = state.mode === 'rank' ? state.rankName : state.wordmark;
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cartiqo';
   }
 
-  // e.g. cartiqo-1280x360-dark.png, cartiqo-icon-512x512-dark@2x.png or
-  // cartiqo-animated-1280x360-dark.png
+  // e.g. cartiqo-1280x360-dark.png, cartiqo-icon-512x512-dark@2x.png,
+  // nova-rank-card-960x300-dark.png or cartiqo-animated-1280x360-dark.png
   function fileName(ext, scale, size, extra) {
-    const kind = (state.mode === 'logo' ? '-' + state.logoType : '') + (extra ? '-' + extra : '');
+    const kind = (state.mode === 'logo' ? '-' + state.logoType : state.mode === 'rank' ? '-rank-card' : '') + (extra ? '-' + extra : '');
     return slug() + kind + '-' + size.width + 'x' + size.height + '-' + state.theme + (scale > 1 ? '@' + scale + 'x' : '') + '.' + ext;
   }
 
@@ -1333,8 +1448,12 @@ function start() {
         ? 'This one keeps looping in SVGs too; video records one loop and PNG is the still wordmark.'
         : 'SVG and video play once and stop on the finished wordmark; PNG is the finished frame.');
 
-    hintFor(state.wordmark, $('wordmark-hint'), 'wordmark', "Letters, numbers, spaces and . - / ! '. A full stop becomes the dot.");
+    hintFor(state.wordmark, $('wordmark-hint'), 'wordmark', "Letters, numbers, spaces and . - / ! ' #. A full stop becomes the dot.");
     hintFor(state.mark, $('mark-hint'), 'icon', 'One to three characters work best. A full stop becomes the dot.');
+    $('avatar-remove').hidden = !avatar;
+    $('avatar-hint').textContent = avatar
+      ? 'The picture stays on this device and is not in shared links.'
+      : 'Without a picture the card shows the name’s first letter. You can also drop a picture on the preview.';
   }
 
   // Says which characters the wordmark can't draw.
@@ -1365,7 +1484,7 @@ function start() {
     $('preview').parentNode.classList.toggle('checker', logo);
 
     const p = preset();
-    $('format').textContent = logo ? LOGO_TYPES[state.logoType].name : p ? p.name : 'Custom size';
+    $('format').textContent = state.mode === 'rank' ? 'Rank card' : logo ? LOGO_TYPES[state.logoType].name : p ? p.name : 'Custom size';
     $('dims').textContent = size.width + ' × ' + size.height;
 
     const safe = $('safe');
@@ -1393,6 +1512,7 @@ function start() {
     const key = el.dataset && el.dataset.key;
     if (!key || (el.type === 'radio' && !el.checked)) return;
     let v = el.type === 'checkbox' ? el.checked : (el.type === 'range' || el.type === 'number' || key === 'pngScale') ? Number(el.value) : el.value;
+    if (typeof v === 'number' && !isFinite(v)) return;
 
     if (key === 'width' || key === 'height') {
       v = Math.round(v);
@@ -1445,33 +1565,70 @@ function start() {
     if (e.target.type === 'number') e.target.value = state[e.target.dataset.key];
   });
 
-  // Images are scaled down so the SVG stays a sensible size.
-  function loadImage(file) {
+  // Pictures are scaled down so the SVG stays a sensible size: background
+  // images to 3000 pixels, avatars to 512. `target` is 'image' or 'avatar'.
+  function loadImage(file, target) {
     if (!file || !/^image\//.test(file.type)) { say('That file is not an image.'); return; }
+    const forAvatar = target === 'avatar';
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = function () {
-      const s = Math.min(1, 3000 / Math.max(img.naturalWidth, img.naturalHeight));
+      const s = Math.min(1, (forAvatar ? 512 : 3000) / Math.max(img.naturalWidth, img.naturalHeight));
       const c = document.createElement('canvas');
       c.width = Math.max(1, Math.round(img.naturalWidth * s));
       c.height = Math.max(1, Math.round(img.naturalHeight * s));
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      image = file.type === 'image/png' ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.88);
+      const data = file.type === 'image/png' || forAvatar ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.88);
       URL.revokeObjectURL(url);
-      state.fill = 'image';
+      if (forAvatar) {
+        avatar = data;
+      } else {
+        image = data;
+        state.fill = 'image';
+      }
       syncControls();
       update();
-      say('Added ' + file.name + '.');
+      say('Added ' + (file.name || 'the picture') + '.');
     };
     img.onerror = function () {
       URL.revokeObjectURL(url);
-      say('This browser could not open ' + file.name + '. Try a JPG or PNG.');
+      say('This browser could not open ' + (file.name || 'that picture') + '. Try a JPG or PNG.');
     };
     img.src = url;
   }
+
+  $('avatar-pick').addEventListener('click', function () { $('avatar-file').click(); });
+  $('avatar-file').addEventListener('change', function (e) {
+    loadImage(e.target.files[0], 'avatar');
+    e.target.value = '';
+  });
+  $('avatar-remove').addEventListener('click', function () {
+    avatar = null;
+    update();
+    say('Removed the avatar.');
+  });
+  // A link works when its site lets other pages load the picture, as Discord's does.
+  function avatarFromLink() {
+    const link = $('avatar-url').value.trim();
+    if (!/^https?:\/\//i.test(link)) { say('Paste a link that starts with https://.'); return; }
+    const asPng = link.replace(/^(https:\/\/(?:cdn|media)\.discord(?:app)?\.(?:com|net)\/[^?]+)\.webp/i, '$1.png');
+    say('Loading the picture…');
+    fetch(asPng).then(function (res) {
+      if (!res.ok) throw new Error(String(res.status));
+      return res.blob();
+    }).then(function (blob) {
+      loadImage(new File([blob], 'the picture', { type: blob.type || 'image/png' }), 'avatar');
+    }).catch(function () {
+      say('That site does not let other pages load its pictures. Save the picture and choose it instead.');
+    });
+  }
+  $('avatar-load').addEventListener('click', avatarFromLink);
+  $('avatar-url').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); avatarFromLink(); }
+  });
   $('image-pick').addEventListener('click', function () { $('image-file').click(); });
   $('image-file').addEventListener('change', function (e) {
-    loadImage(e.target.files[0]);
+    loadImage(e.target.files[0], 'image');
     e.target.value = '';
   });
   $('image-remove').addEventListener('click', function () {
@@ -1495,7 +1652,8 @@ function start() {
   stage.addEventListener('drop', function (e) {
     if (!e.dataTransfer || !e.dataTransfer.files.length) return;
     e.preventDefault();
-    loadImage(e.dataTransfer.files[0]);
+    // In Rank card mode a dropped picture is the avatar.
+    loadImage(e.dataTransfer.files[0], state.mode === 'rank' ? 'avatar' : 'image');
   });
 
   // Export
@@ -1520,7 +1678,11 @@ function start() {
   }
 
   function animated() {
-    return state.animate !== 'none';
+    return state.mode === 'rank' ? state.rankFill : state.animate !== 'none';
+  }
+
+  function finished() {
+    return state.mode === 'rank' ? 'card' : 'wordmark';
   }
 
   function seeThrough() {
@@ -1529,10 +1691,10 @@ function start() {
 
   // Export formats, in the order the menu shows them. `when` says when one is offered.
   const FORMATS = [
-    { id: 'png', name: 'PNG', hint: function () { return 'Full colour, keeps transparency.' + (animated() ? ' Saves the finished wordmark.' : ''); } },
-    { id: 'jpg', name: 'JPG', hint: function () { return 'Smaller files, no transparency' + (seeThrough() ? ', so the logo sits on its theme colour.' : '.') + (animated() ? ' Saves the finished wordmark.' : ''); } },
-    { id: 'webp', name: 'WebP', when: function () { return canWebp; }, hint: function () { return 'Smaller than PNG and keeps transparency.' + (animated() ? ' Saves the finished wordmark.' : ''); } },
-    { id: 'svg', name: 'SVG', hint: function () { return animated() ? 'Sharp at any size. Plays the animation once and stops on the finished wordmark.' : 'Sharp at any size. The small lines use the viewer’s system font.'; } },
+    { id: 'png', name: 'PNG', hint: function () { return 'Full colour, keeps transparency.' + (animated() ? ' Saves the finished ' + finished() + '.' : ''); } },
+    { id: 'jpg', name: 'JPG', hint: function () { return 'Smaller files, no transparency' + (seeThrough() ? ', so the logo sits on its theme colour.' : '.') + (animated() ? ' Saves the finished ' + finished() + '.' : ''); } },
+    { id: 'webp', name: 'WebP', when: function () { return canWebp; }, hint: function () { return 'Smaller than PNG and keeps transparency.' + (animated() ? ' Saves the finished ' + finished() + '.' : ''); } },
+    { id: 'svg', name: 'SVG', hint: function () { return animated() ? 'Sharp at any size. Plays the animation once and stops on the finished ' + finished() + '.' : 'Sharp at any size. The small lines use the viewer’s system font.'; } },
     { id: 'gif', name: 'GIF', hint: function () { return (animated() ? 'Plays almost everywhere: chats, email, READMEs.' : 'A still GIF.') + ' 256 colours, so soft gradients can band' + (seeThrough() ? ' and see-through edges look hard.' : '.'); } },
     { id: 'apng', name: 'Animated PNG', when: animated, hint: 'Full colour and smooth transparency. Plays in browsers and on GitHub; some chat apps show only the first frame.' },
     { id: 'webm', name: 'WebM video', when: function () { return animated() && !!videoType('webm'); }, hint: 'Video for websites and Discord. No transparency, so see-through parts get the theme colour.' },
@@ -1572,7 +1734,7 @@ function start() {
   }
 
   function backdropColour() {
-    return B.resolveTheme(state.mode === 'logo' ? logoOptions() : options()).bg;
+    return B.resolveTheme(state.mode === 'logo' ? logoOptions() : state.mode === 'rank' ? rankOptions() : options()).bg;
   }
 
   // An error whose message is written for people, so the status line can show it.
@@ -1637,8 +1799,8 @@ function start() {
       const n = Math.max(2, Math.round(state.duration * ANIMATION_FPS));
       for (let i = 0; i < n; i++) svgs.push(currentSvg({ frame: i / n }));
     } else {
-      const n = Math.max(2, Math.round(state.duration * B.animationSpan(state.animate) * ANIMATION_FPS));
-      for (let i = 0; i <= n; i++) svgs.push(currentSvg({ frame: i / n * B.animationSpan(state.animate) }));
+      const n = Math.max(2, Math.round(state.duration * spanNow() * ANIMATION_FPS));
+      for (let i = 0; i <= n; i++) svgs.push(currentSvg({ frame: i / n * spanNow() }));
     }
     return svgs;
   }
@@ -1680,7 +1842,10 @@ function start() {
     const svgs = animationSvgs();
     const size = sizeOf(svgs[0]);
     const px = animationSize(size);
-    const see = seeThrough();
+    // A rank card's round corners stay see-through; only a logo without a
+    // background has pixels that turn see-through as it plays.
+    const see = seeThrough() || (state.mode === 'rank' && state.rankRadius > 0);
+    const wholeFrames = seeThrough();
     const matte = rgbOf(backdropColour());
     const palette = new E.Palette(255);
     const sample = svgs.filter(function (s, i) { return i % 4 === 0; }).concat(svgs.length > 1 ? [currentSvg({ animate: 'none' })] : []);
@@ -1689,7 +1854,7 @@ function start() {
       palette.add(E.flatten(rgba, matte, see), step);
     }, 'Choosing colours from frame').then(function () {
       palette.build();
-      const gif = E.createGif(px.width, px.height, { palette: palette, loop: state.loopForever && svgs.length > 1, transparent: see });
+      const gif = E.createGif(px.width, px.height, { palette: palette, loop: state.loopForever && svgs.length > 1, transparent: wholeFrames });
       return eachFrame(svgs, px.width, px.height, function (rgba) {
         gif.addFrame(E.flatten(rgba, matte, see), 1000 / ANIMATION_FPS);
       }, 'Drawing frame').then(function () { return gif.finish(); });
@@ -1793,7 +1958,7 @@ function start() {
       return;
     }
     const fps = 30;
-    const count = Math.max(2, Math.round(state.duration * B.animationSpan(state.animate) * fps));
+    const count = Math.max(2, Math.round(state.duration * spanNow() * fps));
     const hold = Math.round(1.5 * fps);
     const size = sizeOf(currentSvg());
     const scale = Math.min(state.pngScale, Math.sqrt(MAX_VIDEO_PIXELS / (size.width * size.height)));
@@ -1807,7 +1972,7 @@ function start() {
     const batchSize = Math.max(4, Math.floor(VIDEO_BATCH_BYTES / (canvas.width * canvas.height * 4)));
     // Every frame's SVG is made now, so changing settings mid-recording can't mix them.
     const svgs = [];
-    for (let i = 0; i < count; i++) svgs.push(currentSvg({ frame: i / (count - 1) * B.animationSpan(state.animate) }));
+    for (let i = 0; i < count; i++) svgs.push(currentSvg({ frame: i / (count - 1) * spanNow() }));
     let recorder = null;
     let stopTicker = null;
     let onTick = null;
@@ -1953,6 +2118,78 @@ function start() {
     run(0).catch(fail('A frame could not be drawn. Download the SVG instead.'));
   }
 
+  // What is on screen as cartiqo-brand options: only what differs from the
+  // defaults and does something, with pictures as placeholders.
+  function codeOptions() {
+    const kind = state.mode === 'rank' ? 'rank-card' : state.mode;
+    const r = state.mode === 'rank' ? rankOptions() : state.mode === 'logo' ? logoOptions() : options();
+    const defaults = state.mode === 'rank' ? B.RANK_DEFAULTS : state.mode === 'logo' ? B.LOGO_DEFAULTS : B.DEFAULTS;
+    const out = {};
+    Object.keys(r).forEach(function (k) {
+      if (k === 'measure' || k === 'safe' || k === 'image' || k === 'avatar') return;
+      const v = r[k];
+      if (v == null || v === '' && defaults[k] == null || v === defaults[k]) return;
+      out[k] = typeof v === 'number' ? Math.round(v * 1000) / 1000 : v;
+    });
+    const drop = function () { Array.prototype.forEach.call(arguments, function (k) { delete out[k]; }); };
+    if (r.theme !== 'custom') drop('bg', 'ink');
+    if ((kind === 'logo' ? r.background : r.fill) !== 'gradient') drop('bg2', 'angle');
+    if (r.fill !== 'glow') drop('glow', 'glowAt');
+    if (r.fill !== 'image' || !image) drop('dim', 'blur', 'fill');
+    if (r.pattern === 'none') drop('patternSize', 'patternStrength');
+    if (!animated()) drop('animate', 'duration', 'order', 'stagger', 'easing', 'exit', 'intensity', 'animateLines', 'animateRule', 'animateCorners');
+    else if (kind !== 'rank-card' && Math.abs(r.stagger - B.staggerDefault(r.animate)) < 0.006) drop('stagger');
+    if (kind === 'banner') {
+      if (out.scale != null) { out.contentSize = out.scale; drop('scale'); }
+      const p = preset();
+      drop('width', 'height');
+      if (p && p.id !== 'github') out.preset = p.id;
+      else if (!p) { out.width = r.width; out.height = r.height; }
+    }
+    if (kind === 'logo') {
+      if (r.type !== 'lockup') drop('overline', 'motto', 'font', 'caps', 'rule');
+      if (r.type === 'icon') drop('wordmark'); else drop('mark');
+      if (r.background === 'none') drop('shape', 'radius', 'pattern', 'patternSize', 'patternStrength', 'grain');
+    }
+    if (kind === 'rank-card') {
+      // The member's details are the point, so they are always there.
+      ['username', 'level', 'rank', 'xp', 'xpNeeded'].forEach(function (k) { out[k] = r[k]; });
+      if (avatar) out.avatar = 'https://cdn.discordapp.com/avatars/USER_ID/AVATAR.png';
+    }
+    if (image && r.fill === 'image') out.image = 'https://example.com/background.png';
+    const format = ['png', 'svg', 'gif', 'apng'].indexOf(state.format) >= 0 ? state.format : 'png';
+    if (format !== 'png') out.format = format;
+    if (format !== 'svg' && state.pngScale !== 1) out.scale = state.pngScale;
+    if (animated() && (format === 'svg' || ((format === 'gif' || format === 'apng') && !state.loopForever))) out.loop = false;
+    return { kind: kind, format: format, options: out };
+  }
+
+  function codeSnippet() {
+    const c = codeOptions();
+    const fn = c.kind === 'rank-card' ? 'rankCard' : c.kind;
+    const lit = function (v) { return typeof v === 'string' ? "'" + v.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'" : String(v); };
+    const lines = Object.keys(c.options).map(function (k) { return '  ' + k + ': ' + lit(c.options[k]) + ','; });
+    const call = lines.length ? fn + '({\n' + lines.join('\n') + '\n})' : fn + '()';
+    const file = c.kind + '.' + (c.format === 'apng' ? 'png' : c.format);
+    return '// npm install cartiqo-brand\nimport { ' + fn + " } from 'cartiqo-brand';\nimport { writeFile } from 'node:fs/promises';\n\n" +
+      'const image = await ' + call + ";\nawait writeFile('" + file + "', image);\n";
+  }
+
+  function apiUrl() {
+    const c = codeOptions();
+    const params = new URLSearchParams();
+    Object.keys(c.options).forEach(function (k) { if (k !== 'format') params.set(k, String(c.options[k])); });
+    const q = params.toString();
+    return 'http://localhost:3000/' + c.kind + '.' + c.format + (q ? '?' + q : '');
+  }
+
+  $('copy-code').addEventListener('click', function () {
+    copy(codeSnippet(), 'Copied the code. It needs the package: npm install cartiqo-brand.');
+  });
+  $('copy-api').addEventListener('click', function () {
+    copy(apiUrl(), 'Copied an API address. Start the API with npx cartiqo-brand serve, then put your server’s address in place of localhost:3000.');
+  });
+
   $('copy-svg').addEventListener('click', function () { copy(currentSvg({ loop: false }), 'Copied the SVG.'); });
   $('copy-link').addEventListener('click', function () {
     copy(location.href, image ? 'Copied a link. Your image is not in it, so add it again after opening the link.' : 'Copied a link to this banner.');
@@ -1962,6 +2199,7 @@ function start() {
     const keep = { mode: state.mode, size: state.size, width: state.width, height: state.height, logoType: state.logoType, logoSize: state.logoSize };
     Object.assign(state, DEFAULTS, keep, { logoBg: LOGO_TYPES[keep.logoType].logoBg, padding: LOGO_TYPES[keep.logoType].padding });
     image = null;
+    avatar = null;
     syncControls();
     update();
     say('Back to the CARTIQO defaults. The size stayed.');

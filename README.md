@@ -3,18 +3,17 @@
 The CARTIQO Labs organisation profile and the tools that go with it.
 
 - `profile/README.md` is the page at [github.com/cartiqolabs](https://github.com/cartiqolabs). Its banner is in `profile/assets/`.
-- `docs/` is the banner and logo maker, live at [cartiqolabs.github.io/.github](https://cartiqolabs.github.io/.github/). GitHub Pages serves it from this folder on `main`.
+- `docs/` is the banner, logo and rank card maker, live at [cartiqolabs.github.io/.github](https://cartiqolabs.github.io/.github/). GitHub Pages serves it from this folder on `main`.
+- `packages/brand/` is the [cartiqo-brand](packages/brand#readme) npm package: the same images from JavaScript, the command line or an HTTP API, with a step-by-step guide.
 
-## Banners and logos
+## How it fits together
 
-`docs/banner.js` draws the banners and logos. The page uses it in the browser, and it runs in Node too:
+`docs/banner.js` draws the banners, logos and rank cards as SVG, and `docs/encoders.js` turns frames into GIF, animated PNG and ICO files without any libraries. The website loads both. The npm package copies them into `packages/brand/lib/` and adds PNG drawing, picture loading, the HTTP API and the command line.
 
-```js
-const { render, renderLogo } = require('./docs/banner.js');
-const banner = render({ width: 1500, height: 500, theme: 'light', motto: 'Honest by default' });
-const icon = renderLogo({ type: 'icon', background: 'solid', padding: 0.24, size: 512 });
+After changing either file in `docs/`, run this to update the package's copy (publishing refuses to run if the copy is stale):
+
+```bash
+cd packages/brand && npm run sync && npm test
 ```
 
-`docs/encoders.js` turns frames into GIF, animated PNG and ICO files without any libraries.
-
-With no options `render` draws the profile banner exactly. `renderLogo` makes a `wordmark`, an `icon` or a `lockup` (the wordmark with its two lines). The wordmark is drawn from the same strokes as the CARTIQO logo, with every letter A to Z, the numbers and `. - / ! '`. A full stop becomes the accent dot.
+With no options, `render` draws the profile banner exactly, and the package's tests check that. The wordmark is drawn from the same strokes as the CARTIQO logo, with every letter A to Z, the numbers and `. - / ! ' #`. A full stop becomes the accent dot.
