@@ -708,7 +708,7 @@
           <button type="button" id="copy-code">Copy code</button>
           <button type="button" id="copy-api">Copy API URL</button>
         </div>
-        <span class="hint">Makes this from JavaScript or a web address with the <a href="https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme">cartiqo-brand</a> package.</span>
+        <span class="hint">Makes this from JavaScript or a web address with the <a href="https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme">@cartiqo/brand</a> package.</span>
       </div>
       <p class="status" id="status" role="status" aria-live="polite"></p>
     </fieldset>
@@ -2118,7 +2118,7 @@ function start() {
     run(0).catch(fail('A frame could not be drawn. Download the SVG instead.'));
   }
 
-  // What is on screen as cartiqo-brand options: only what differs from the
+  // What is on screen as @cartiqo/brand options: only what differs from the
   // defaults and does something, with pictures as placeholders.
   function codeOptions() {
     const kind = state.mode === 'rank' ? 'rank-card' : state.mode;
@@ -2171,7 +2171,7 @@ function start() {
     const lines = Object.keys(c.options).map(function (k) { return '  ' + k + ': ' + lit(c.options[k]) + ','; });
     const call = lines.length ? fn + '({\n' + lines.join('\n') + '\n})' : fn + '()';
     const file = c.kind + '.' + (c.format === 'apng' ? 'png' : c.format);
-    return '// npm install cartiqo-brand\nimport { ' + fn + " } from 'cartiqo-brand';\nimport { writeFile } from 'node:fs/promises';\n\n" +
+    return '// npm install @cartiqo/brand\nimport { ' + fn + " } from '@cartiqo/brand';\nimport { writeFile } from 'node:fs/promises';\n\n" +
       'const image = await ' + call + ";\nawait writeFile('" + file + "', image);\n";
   }
 
@@ -2184,10 +2184,10 @@ function start() {
   }
 
   $('copy-code').addEventListener('click', function () {
-    copy(codeSnippet(), 'Copied the code. It needs the package: npm install cartiqo-brand.');
+    copy(codeSnippet(), 'Copied the code. It needs the package: npm install @cartiqo/brand.');
   });
   $('copy-api').addEventListener('click', function () {
-    copy(apiUrl(), 'Copied an API address. Start the API with npx cartiqo-brand serve, then put your server’s address in place of localhost:3000.');
+    copy(apiUrl(), 'Copied an API address. Start the API with npx @cartiqo/brand serve, then put your server’s address in place of localhost:3000.');
   });
 
   $('copy-svg').addEventListener('click', function () { copy(currentSvg({ loop: false }), 'Copied the SVG.'); });

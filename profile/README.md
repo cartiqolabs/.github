@@ -49,7 +49,7 @@ TypeScript from end to end. React for every product, deployed per domain on Clou
 ## Tools
 
 - [Banners and logos](https://cartiqolabs.github.io/.github/): makes CARTIQO banners like the one at the top of this page, in the sizes GitHub, Discord, X, LinkedIn and YouTube want, plus the CARTIQO wordmark, icons and rank cards.
-- [cartiqo-brand](https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme): the same images from JavaScript, the command line or an HTTP API, including rank cards for Discord bots.
+- [@cartiqo/brand](https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme): the same images from JavaScript, the command line or an HTTP API, including rank cards for Discord bots.
 
 ## Open source
 

@@ -4,7 +4,7 @@ The CARTIQO Labs organisation profile and the tools that go with it.
 
 - `profile/README.md` is the page at [github.com/cartiqolabs](https://github.com/cartiqolabs). Its banner is in `profile/assets/`.
 - `docs/` is the banner, logo and rank card maker, live at [cartiqolabs.github.io/.github](https://cartiqolabs.github.io/.github/). GitHub Pages serves it from this folder on `main`.
-- `packages/brand/` is the [cartiqo-brand](packages/brand#readme) npm package: the same images from JavaScript, the command line or an HTTP API, with a step-by-step guide.
+- `packages/brand/` is the [@cartiqo/brand](https://www.npmjs.com/package/@cartiqo/brand) npm package: the same images from JavaScript, the command line or an HTTP API, with a step-by-step guide.
 
 ## How it fits together
 

@@ -1,4 +1,4 @@
-# cartiqo-brand
+# @cartiqo/brand
 
 CARTIQO banners, logos and rank cards from code, the command line or a web address. You get SVG, PNG, GIF or animated PNG, drawn with the same strokes as the CARTIQO logo.
 
@@ -21,7 +21,7 @@ Want to design first? Open the [banner and logo maker](https://cartiqolabs.githu
 ## Install
 
 ```bash
-npm install cartiqo-brand
+npm install @cartiqo/brand
 ```
 
 You need Node 18 or newer. PNGs are drawn with [resvg](https://github.com/yisibl/resvg-js), which comes ready-made for Windows, macOS and Linux, so there is nothing to compile.
@@ -29,7 +29,7 @@ You need Node 18 or newer. PNGs are drawn with [resvg](https://github.com/yisibl
 ## 1. Your first banner
 
 ```js
-import { banner } from 'cartiqo-brand';
+import { banner } from '@cartiqo/brand';
 import { writeFile } from 'node:fs/promises';
 
 const png = await banner({ motto: 'Honest by default' });
@@ -49,7 +49,7 @@ await banner({ wordmark: 'CARTIQO LABS.', accent: 'chat', fill: 'gradient' });
 const svg = await banner({ format: 'svg' });       // SVG comes back as a string
 ```
 
-Every maker returns a Promise. For `png`, `gif` and `apng` you get a Buffer; for `svg` you get a string. Using CommonJS? `const { banner } = require('cartiqo-brand')` works too.
+Every maker returns a Promise. For `png`, `gif` and `apng` you get a Buffer; for `svg` you get a string. Using CommonJS? `const { banner } = require('@cartiqo/brand')` works too.
 
 **Presets:** `github` (1280 × 360), `github-social` (1280 × 640), `og` (1200 × 630), `x` (1500 × 500), `linkedin` (1584 × 396), `youtube` (2560 × 1440), `discord-server` (960 × 540), `discord-invite` (1920 × 1080), `discord-profile` (1200 × 480), `discord-embed` (1200 × 600), `email` (1200 × 400), `square` (1080 × 1080) and `story` (1080 × 1920).
 
@@ -59,7 +59,7 @@ Here is a complete `/rank` command for [discord.js](https://discord.js.org) v14.
 
 ```js
 import { AttachmentBuilder } from 'discord.js';
-import { rankCard } from 'cartiqo-brand';
+import { rankCard } from '@cartiqo/brand';
 
 export async function rank(interaction) {
   const user = interaction.options.getUser('member') ?? interaction.user;
@@ -115,7 +115,7 @@ Good to know:
 ## 3. Logos and icons
 
 ```js
-import { logo } from 'cartiqo-brand';
+import { logo } from '@cartiqo/brand';
 
 const wordmark = await logo();                                                // CARTIQO., see-through, 256 pixels tall
 const icon = await logo({ type: 'icon', background: 'solid', size: 512 });    // a server icon or avatar
@@ -165,7 +165,7 @@ GIF plays almost everywhere but has 256 colours. An animated PNG (`apng`) has fu
 Every image is also a web address, so anything that can load a picture can use it: a website, a Discord embed, a README.
 
 ```bash
-npx cartiqo-brand serve --port 3000
+npx @cartiqo/brand serve --port 3000
 ```
 
 Then open:
@@ -187,14 +187,14 @@ The **Copy API URL** button in the web maker gives you the address for whatever 
 **Pictures from the web.** By default the API only fetches avatars and background pictures from Discord (`cdn.discordapp.com` and `media.discordapp.net`). That stops it being used to reach other servers. You can allow more hosts, or any host:
 
 ```bash
-npx cartiqo-brand serve --allow-image-host cdn.discordapp.com --allow-image-host i.imgur.com
-npx cartiqo-brand serve --any-image-host   # only behind a login or on a private network
+npx @cartiqo/brand serve --allow-image-host cdn.discordapp.com --allow-image-host i.imgur.com
+npx @cartiqo/brand serve --any-image-host   # only behind a login or on a private network
 ```
 
 **Inside your own server.** `createHandler()` works with Node's `http`, Express and Fastify. Addresses it doesn't know go on to the next handler.
 
 ```js
-import { createHandler } from 'cartiqo-brand';
+import { createHandler } from '@cartiqo/brand';
 
 // Node
 import http from 'node:http';
@@ -225,13 +225,13 @@ fastify.all('/brand/*', (req, reply) => {
 ## 6. The command line
 
 ```bash
-npx cartiqo-brand banner --motto "Honest by default" --theme light -o banner.png
-npx cartiqo-brand banner --preset x --animate draw -o header.gif
-npx cartiqo-brand logo --type icon --background solid --size 512 -o icon.png
-npx cartiqo-brand rank-card --username Nova --level 12 --rank 3 --xp 1250 --xp-needed 2000 --avatar ./nova.png -o rank.png
+npx @cartiqo/brand banner --motto "Honest by default" --theme light -o banner.png
+npx @cartiqo/brand banner --preset x --animate draw -o header.gif
+npx @cartiqo/brand logo --type icon --background solid --size 512 -o icon.png
+npx @cartiqo/brand rank-card --username Nova --level 12 --rank 3 --xp 1250 --xp-needed 2000 --avatar ./nova.png -o rank.png
 ```
 
-Options are the JavaScript ones written `--like-this`, and `--no-border` switches one off. The file name picks the format (`.png`, `.svg` or `.gif`); use `--format apng` for an animated PNG. `npx cartiqo-brand options rank-card` lists every option and `npx cartiqo-brand presets` lists the sizes.
+Options are the JavaScript ones written `--like-this`, and `--no-border` switches one off. The file name picks the format (`.png`, `.svg` or `.gif`); use `--format apng` for an animated PNG. `npx @cartiqo/brand options rank-card` lists every option and `npx @cartiqo/brand presets` lists the sizes.
 
 ## 7. All the options
 

@@ -3,39 +3,39 @@
 
 // The command line:
 //
-//   npx cartiqo-brand banner --motto "Honest by default" -o banner.png
-//   npx cartiqo-brand rank-card --username Nova --level 12 --xp 1250 --xp-needed 2000
-//   npx cartiqo-brand serve --port 3000
+//   npx @cartiqo/brand banner --motto "Honest by default" -o banner.png
+//   npx @cartiqo/brand rank-card --username Nova --level 12 --xp 1250 --xp-needed 2000
+//   npx @cartiqo/brand serve --port 3000
 const fs = require('node:fs');
 const path = require('node:path');
 const brand = require('..');
 const { TYPES } = require('../lib/options.js');
 const pkg = require('../package.json');
 
-const HELP = `cartiqo-brand ${pkg.version}: CARTIQO banners, logos and rank cards
+const HELP = `${pkg.name} ${pkg.version}: CARTIQO banners, logos and rank cards
 
 Make an image:
-  cartiqo-brand banner    [options] [-o file]
-  cartiqo-brand logo      [options] [-o file]
-  cartiqo-brand rank-card [options] [-o file]
+  npx @cartiqo/brand banner    [options] [-o file]
+  npx @cartiqo/brand logo      [options] [-o file]
+  npx @cartiqo/brand rank-card [options] [-o file]
 
 Run the HTTP API:
-  cartiqo-brand serve [--port 3000] [--host 0.0.0.0] [--base-path /brand]
+  npx @cartiqo/brand serve [--port 3000] [--host 0.0.0.0] [--base-path /brand]
                       [--allow-image-host cdn.example.com ...] [--any-image-host]
 
 Other:
-  cartiqo-brand options <banner|logo|rank-card>   list what can be set
-  cartiqo-brand presets                           list banner sizes
-  cartiqo-brand --help | --version
+  npx @cartiqo/brand options <banner|logo|rank-card>   list what can be set
+  npx @cartiqo/brand presets                           list banner sizes
+  npx @cartiqo/brand --help | --version
 
 Options are written --like-this or --like-this=value. The file name picks the
 format (.png, .svg or .gif); use --format apng for an animated PNG.
 
 Examples:
-  cartiqo-brand banner --motto "Honest by default" --theme light -o banner.png
-  cartiqo-brand banner --preset x --animate draw -o header.gif
-  cartiqo-brand logo --type icon --background solid --size 512 -o icon.png
-  cartiqo-brand rank-card --username Nova --level 12 --rank 3 --xp 1250 --xp-needed 2000 \\
+  npx @cartiqo/brand banner --motto "Honest by default" --theme light -o banner.png
+  npx @cartiqo/brand banner --preset x --animate draw -o header.gif
+  npx @cartiqo/brand logo --type icon --background solid --size 512 -o icon.png
+  npx @cartiqo/brand rank-card --username Nova --level 12 --rank 3 --xp 1250 --xp-needed 2000 \\
                           --avatar ./nova.png -o rank.png
 
 Guide: https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme`;
@@ -103,7 +103,7 @@ async function main() {
     return;
   }
 
-  if (!TYPES[command]) fail('"' + command + '" is not something this makes. Run cartiqo-brand --help.');
+  if (!TYPES[command]) fail('"' + command + '" is not something this makes. Run npx @cartiqo/brand --help.');
   const options = Object.assign({}, args);
   delete options._;
   const out = options.out;

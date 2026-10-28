@@ -136,7 +136,7 @@ test('HTTP API: images, errors and the index', async () => {
 
     res = await fetch(base + '/');
     const index = await res.json();
-    assert.equal(index.name, 'cartiqo-brand');
+    assert.equal(index.name, '@cartiqo/brand');
     assert.equal(index.images.length, 3);
 
     res = await fetch(base + '/nope');
@@ -177,5 +177,5 @@ test('command line: makes a file, explains mistakes', () => {
 
   const help = spawnSync(process.execPath, [bin, '--help'], { encoding: 'utf8' });
   assert.equal(help.status, 0);
-  assert.match(help.stdout, /cartiqo-brand serve/);
+  assert.match(help.stdout, /@cartiqo\/brand serve/);
 });

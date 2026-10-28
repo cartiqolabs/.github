@@ -1,5 +1,5 @@
 {
-  "name": "cartiqo-brand",
+  "name": "@cartiqo/brand",
   "version": "0.1.0",
   "description": "CARTIQO banners, logos and rank cards as SVG, PNG, GIF and animated PNG, from code, the command line or an HTTP API.",
   "license": "MIT",

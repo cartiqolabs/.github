@@ -1,4 +1,4 @@
-// ES module entry: import { banner, logo, rankCard } from 'cartiqo-brand';
+// ES module entry: import { banner, logo, rankCard } from '@cartiqo/brand';
 import brand from './index.js';
 
 export const { banner, logo, rankCard, make, BrandError, presets, themes, accents, animations, patterns, statuses, formats, render } = brand;

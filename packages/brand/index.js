@@ -1,8 +1,8 @@
 'use strict';
 
-// cartiqo-brand: CARTIQO banners, logos and rank cards.
+// @cartiqo/brand: CARTIQO banners, logos and rank cards.
 //
-//   const { banner, logo, rankCard } = require('cartiqo-brand');
+//   const { banner, logo, rankCard } = require('@cartiqo/brand');
 //   const png = await banner({ motto: 'Honest by default' });
 //
 // Every maker returns a Promise: a Buffer for png, gif and apng, a string for svg.
