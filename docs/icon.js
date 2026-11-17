@@ -17,14 +17,14 @@
 
   // Presets use the CARTIQO colours from banner.js. `bg2` makes a gradient.
   const PRESETS = [
-    { id: 'violet', name: 'Violet', iconShape: 'squircle', iconFill: 'solid', iconBg: '#7C5CFF', iconInk: '#FFFFFF', iconRing: 0 },
-    { id: 'onyx', name: 'Onyx', iconShape: 'squircle', iconFill: 'solid', iconBg: '#0E1013', iconInk: '#F4F4F6', iconRing: 1, iconRingInk: '#7C5CFF', iconRingInset: 3 },
-    { id: 'dusk', name: 'Dusk', iconShape: 'circle', iconFill: 'gradient', iconBg: '#7C5CFF', iconBg2: '#0A0F24', iconAngle: 135, iconInk: '#FFFFFF', iconRing: 0 },
-    { id: 'paper', name: 'Paper', iconShape: 'rounded', iconFill: 'solid', iconBg: '#FFFAFA', iconInk: '#111113', iconRing: 1, iconRingInk: '#E3DEDE', iconRingInset: 0 },
-    { id: 'midnight', name: 'Midnight', iconShape: 'rounded', iconFill: 'solid', iconBg: '#0A0F24', iconInk: '#7D97FF', iconRing: 0 },
-    { id: 'graphite', name: 'Graphite', iconShape: 'hexagon', iconFill: 'solid', iconBg: '#25282F', iconInk: '#C3C8D2', iconRing: 1, iconRingInk: '#C3C8D2', iconRingInset: 3 },
-    { id: 'linen', name: 'Linen', iconShape: 'circle', iconFill: 'solid', iconBg: '#F2EDE4', iconInk: '#1C1A17', iconRing: 0 },
-    { id: 'plain', name: 'Plain', iconShape: 'squircle', iconFill: 'none', iconBg: '#7C5CFF', iconInk: '#7C5CFF', iconRing: 0 },
+    { id: 'violet', name: 'Violet', iconShape: 'squircle', iconFill: 'solid', iconBg: '#7C5CFF', iconInk: '#FFFFFF', iconRing: 0, iconGlow: 'none' },
+    { id: 'onyx', name: 'Onyx', iconShape: 'squircle', iconFill: 'solid', iconBg: '#0E1013', iconInk: '#F4F4F6', iconRing: 1, iconRingInk: '#7C5CFF', iconRingInset: 3, iconGlow: 'none' },
+    { id: 'dusk', name: 'Dusk', iconShape: 'circle', iconFill: 'gradient', iconBg: '#7C5CFF', iconBg2: '#0A0F24', iconAngle: 135, iconInk: '#FFFFFF', iconRing: 0, iconGlow: 'none' },
+    { id: 'paper', name: 'Paper', iconShape: 'rounded', iconFill: 'solid', iconBg: '#FFFAFA', iconInk: '#111113', iconRing: 1, iconRingInk: '#E3DEDE', iconRingInset: 0, iconGlow: 'none' },
+    { id: 'neon', name: 'Neon', iconShape: 'rounded', iconFill: 'solid', iconBg: '#0A0F24', iconInk: '#E8ECFA', iconRing: 0, iconGlow: 'glyph', iconGlowInk: '#7C5CFF', iconGlowStrength: 70 },
+    { id: 'graphite', name: 'Graphite', iconShape: 'hexagon', iconFill: 'solid', iconBg: '#25282F', iconInk: '#C3C8D2', iconRing: 1, iconRingInk: '#C3C8D2', iconRingInset: 3, iconGlow: 'none' },
+    { id: 'linen', name: 'Linen', iconShape: 'circle', iconFill: 'solid', iconBg: '#F2EDE4', iconInk: '#1C1A17', iconRing: 0, iconGlow: 'none' },
+    { id: 'plain', name: 'Plain', iconShape: 'squircle', iconFill: 'none', iconBg: '#7C5CFF', iconInk: '#7C5CFF', iconRing: 0, iconGlow: 'none' },
   ];
 
   // Categories match whole words in an icon's name, so "cat" finds cat-face
@@ -60,6 +60,9 @@
     iconRing: 0,
     iconRingInk: '#B69BFF',
     iconRingInset: 2,
+    iconGlow: 'none', // none, glyph or shape
+    iconGlowInk: '#B69BFF',
+    iconGlowStrength: 50,
     iconSize: 256,
   };
 
@@ -122,6 +125,14 @@
     const unit = BOARD / 64;
     const parts = [];
     let defs = '';
+    const glow = o.iconGlow === 'glyph' || o.iconGlow === 'shape' ? o.iconGlow : null;
+    const strength = Math.max(0, Math.min(100, o.iconGlowStrength)) / 100;
+    // A shape glow spreads outside the shape, so the shape shrinks to leave it room.
+    const margin = glow === 'shape' ? 16 + strength * 48 : 0;
+    if (glow === 'shape') {
+      parts.push('<path d="' + shapePath(o.iconShape, margin, o.iconRadius) + '" fill="' + esc(o.iconGlowInk) +
+        '" opacity="' + n(0.55 + strength * 0.45) + '" filter="url(#ctq-icon-glow)"/>');
+    }
     if (o.iconFill !== 'none') {
       let paint = esc(o.iconBg);
       if (o.iconFill === 'gradient') {
@@ -132,17 +143,28 @@
           '<stop offset="0" stop-color="' + esc(o.iconBg) + '"/><stop offset="1" stop-color="' + esc(o.iconBg2) + '"/></linearGradient></defs>';
         paint = 'url(#ctq-icon-fill)';
       }
-      parts.push('<path d="' + shapePath(o.iconShape, 0, o.iconRadius) + '" fill="' + paint + '"/>');
+      parts.push('<path d="' + shapePath(o.iconShape, margin, o.iconRadius) + '" fill="' + paint + '"/>');
     }
     if (o.iconRing > 0) {
       const w = o.iconRing * unit;
-      const d = shapePath(o.iconShape, o.iconRingInset * unit + w / 2, o.iconRadius);
+      const d = shapePath(o.iconShape, margin + o.iconRingInset * unit + w / 2, o.iconRadius);
       if (d) parts.push('<path d="' + d + '" fill="none" stroke="' + esc(o.iconRingInk) + '" stroke-width="' + n(w) + '"/>');
     }
     if (glyph) {
-      const k = BOARD * o.iconScale / 100 / 24;
-      parts.push('<g transform="translate(' + MID + ' ' + MID + ') rotate(' + n(o.iconRotate) + ') scale(' + n(k) + ') translate(-12 -12)" color="' + esc(o.iconInk) +
-        '" fill="none" stroke="currentColor" stroke-width="' + n(o.iconStroke) + '" stroke-linecap="round" stroke-linejoin="round">' + glyph + '</g>');
+      // The glyph shrinks with the shape, so a shape glow keeps the proportions.
+      const k = (BOARD - margin * 2) * o.iconScale / 100 / 24;
+      const g = function (colour, extra) {
+        return '<g transform="translate(' + MID + ' ' + MID + ') rotate(' + n(o.iconRotate) + ') scale(' + n(k) + ') translate(-12 -12)" color="' + esc(colour) +
+          '" fill="none" stroke="currentColor" stroke-width="' + n(o.iconStroke + (extra || 0)) + '" stroke-linecap="round" stroke-linejoin="round">' + glyph + '</g>';
+      };
+      // A glyph glow is a blurred, slightly bolder copy behind the glyph.
+      if (glow === 'glyph') parts.push('<g filter="url(#ctq-icon-glow)" opacity="' + n(0.6 + strength * 0.4) + '">' + g(o.iconGlowInk, 0.5 + strength) + '</g>');
+      parts.push(g(o.iconInk));
+    }
+    if (glow) {
+      const blur = glow === 'shape' ? margin / 2.6 : 6 + strength * 18;
+      defs += '<defs><filter id="ctq-icon-glow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">' +
+        '<feGaussianBlur stdDeviation="' + n(blur) + '"/></filter></defs>';
     }
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 ' + BOARD + ' ' + BOARD + '">' +
       '<title>' + esc(o.iconName) + '</title>' + defs + parts.join('') + '</svg>';
