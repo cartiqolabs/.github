@@ -88,7 +88,7 @@
     height: 360,
     safe: null,
     wordmark: 'CARTIQO.',
-    overline: 'One account · eight products',
+    overline: 'Independent software · Denmark',
     motto: 'Honest by default',
     font: 'sans',
     caps: true,
