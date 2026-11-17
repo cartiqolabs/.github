@@ -263,7 +263,7 @@ Every option is optional. These work everywhere:
 |---|---|---|
 | `preset`, `width`, `height` | `github` | A preset, or a size in pixels |
 | `wordmark` | `'CARTIQO.'` | A–Z, 0–9, space and `. - / ! ' #`. A full stop becomes the accent dot |
-| `overline`, `motto` | `'One account · eight products'`, `'Honest by default'` | The two lines |
+| `overline`, `motto` | `'Independent software · Denmark'`, `'Honest by default'` | The two lines |
 | `font`, `caps` | `'sans'`, `true` | The lines' font (`sans`, `mono`, `serif`) and whether they are in capitals |
 | `align` | `'center'` | `left`, `center` or `right` |
 | `contentSize` | `1` | How big the content is |

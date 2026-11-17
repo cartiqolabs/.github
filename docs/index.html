@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Banners and logos · CARTIQO Labs</title>
-<meta name="description" content="Make CARTIQO banners in the sizes GitHub, Discord, X, LinkedIn and YouTube want, and CARTIQO logos and icons.">
+<title>Banners, logos and icons · CARTIQO Labs</title>
+<meta name="description" content="Make CARTIQO banners in the sizes GitHub, Discord, X, LinkedIn and YouTube want, CARTIQO logos, and icons from the Lucide set on a CARTIQO shape.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E1013'/%3E%3Cpath d='M19.5 6 H11 A4 4 0 0 0 7 10 V22 A4 4 0 0 0 11 26 H19.5' fill='none' stroke='%23F4F4F6' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='24' r='2.2' fill='%237C5CFF'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -328,6 +328,43 @@
   .picker-swatches button { width: 100%; height: auto; aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px var(--line-strong); }
   .picker-swatches button:hover { transform: scale(1.12); background: var(--c); }
 
+  /* Icon tab */
+  .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .preset { display: grid; gap: 4px; justify-items: center; height: auto; padding: 8px 4px 6px; border-color: transparent; background: none; font-weight: 400; font-size: 12px; color: var(--muted); }
+  .preset img { width: 40px; height: 40px; display: block; }
+  .preset:hover { background: var(--surface-2); border-color: var(--line); }
+  .preset[aria-pressed=true] { border-color: var(--ink); color: var(--ink); background: var(--surface-2); }
+  .icon-search { position: relative; display: flex; align-items: center; }
+  .icon-search > svg { position: absolute; left: 10px; width: 16px; height: 16px; fill: none; stroke: var(--faint); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+  .icon-search input { padding-left: 34px; padding-right: 36px; }
+  .icon-clear { position: absolute; right: 4px; width: 28px; height: 28px; padding: 0; border: 0; background: none; display: grid; place-items: center; color: var(--muted); }
+  .icon-clear svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .icon-clear:hover { background: var(--surface-2); color: var(--ink); }
+  .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -20px; padding: 2px 20px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips button { flex: none; height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; color: var(--muted); background: none; }
+  .chips button[aria-pressed=true] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 4px; max-height: 296px; overflow-y: auto; padding: 2px; margin: -2px; overscroll-behavior: contain; }
+  .icon-grid button { height: auto; aspect-ratio: 1; padding: 0; display: grid; place-items: center; border-color: transparent; background: none; color: var(--muted); }
+  .icon-grid button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-grid button:hover { background: var(--surface-2); color: var(--ink); border-color: var(--line); }
+  .icon-grid button[aria-checked=true] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .icon-grid .empty { grid-column: 1 / -1; margin: 0; padding: 16px 4px; color: var(--muted); font-size: 13px; }
+  .skel { aspect-ratio: 1; border-radius: var(--radius); background: linear-gradient(90deg, var(--surface-2) 0, var(--line) 50%, var(--surface-2) 100%) 0 0 / 200% 100%; animation: shimmer 1.2s linear infinite; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .icon-error { display: grid; gap: 10px; padding: 14px; border-radius: var(--radius); border: 1px solid var(--danger); }
+  .icon-error p { margin: 0; color: var(--ink); font-size: 13px; }
+  .icon-error button { justify-self: start; }
+  .icon-skeleton { width: min(260px, 42vh); aspect-ratio: 1; border-radius: 22%; }
+  .canvas img.icon { width: min(260px, 42vh); height: auto; box-shadow: none; border-radius: 0; }
+  .at-sizes { display: grid; gap: 8px; }
+  .at-title { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+  .at-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .at-bg { display: flex; align-items: flex-end; justify-content: space-around; gap: 8px; padding: 14px 10px 10px; border-radius: var(--radius); border: 1px solid var(--line); background: #1A1B1E; color: rgba(255, 255, 255, 0.55); }
+  .at-bg.light { background: #FFFFFF; color: rgba(0, 0, 0, 0.5); }
+  .at-bg figure { margin: 0; display: grid; justify-items: center; gap: 6px; font: 400 11px/1 'Geist Mono', ui-monospace, monospace; }
+  .at-bg img { display: block; }
+
   footer {
     padding: 20px 24px 28px;
     color: var(--faint);
@@ -342,11 +379,16 @@
     .frame { padding: 12px; min-height: 0; }
     .canvas img { max-height: 28vh; }
     .canvas img.logo { height: 24vh; }
+    .canvas img.icon, .icon-skeleton { width: 22vh; }
+    .at-title, .at-bg.light { display: none; }
+    .at-row { grid-template-columns: 1fr; }
+    .at-bg { padding: 8px 10px; }
     .top { padding: 0 16px; }
     .top nav a:not(:last-child) { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
+    .skel { animation: none; }
   }
 </style>
 </head>
@@ -354,7 +396,7 @@
 <header class="top">
   <a class="brand" href="https://github.com/cartiqolabs" aria-label="CARTIQO Labs on GitHub">
     <span class="mark" id="mark"></span>
-    <span class="name">Banners and logos</span>
+    <span class="name">Banners, logos and icons</span>
   </a>
   <nav>
     <a href="https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme">npm and API</a>
@@ -370,6 +412,7 @@
         <label><input type="radio" name="mode" data-key="mode" value="banner"><span>Banner</span></label>
         <label><input type="radio" name="mode" data-key="mode" value="logo"><span>Logo</span></label>
         <label><input type="radio" name="mode" data-key="mode" value="rank"><span>Rank card</span></label>
+        <label><input type="radio" name="mode" data-key="mode" value="icon"><span>Icon</span></label>
       </div>
     </fieldset>
 
@@ -484,6 +527,105 @@
       </label>
     </fieldset>
 
+    <fieldset data-when="mode:icon" hidden>
+      <legend>Preset</legend>
+      <div class="presets" id="icon-presets" role="group" aria-label="Presets"></div>
+    </fieldset>
+
+    <fieldset data-when="mode:icon" hidden>
+      <legend>Icon</legend>
+      <div class="icon-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" id="icon-query" placeholder="Search icons" spellcheck="false" aria-label="Search icons" aria-controls="icon-grid" enterkeyhint="search">
+        <button type="button" class="icon-clear" id="icon-clear" aria-label="Clear search" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="chips" id="icon-cats" role="group" aria-label="Categories"></div>
+      <div class="icon-grid" id="icon-grid" role="radiogroup" aria-label="Icons" aria-busy="true"></div>
+      <div class="icon-error" id="icon-error" role="alert" hidden>
+        <p>The icon set did not load, so there is nothing to pick from yet. Check your connection and try again.</p>
+        <button type="button" id="icon-retry">Retry</button>
+      </div>
+      <div class="label-row">
+        <span class="hint" id="icon-count" aria-live="polite"></span>
+        <button type="button" class="link-button" id="icon-more" hidden>Show more</button>
+      </div>
+    </fieldset>
+
+    <fieldset data-when="mode:icon" hidden>
+      <legend>Shape</legend>
+      <div class="segmented" role="radiogroup" aria-label="Shape" id="icon-shapes"></div>
+      <label data-when="iconShape:rounded" hidden>Corner radius
+        <span class="range"><input type="range" data-key="iconRadius" min="4" max="50" step="1"><output data-out="iconRadius" data-unit="%"></output></span>
+      </label>
+      <div class="field">Background
+        <div class="segmented" role="radiogroup" aria-label="Background">
+          <label><input type="radio" name="iconFill" data-key="iconFill" value="solid"><span>Solid</span></label>
+          <label><input type="radio" name="iconFill" data-key="iconFill" value="gradient"><span>Gradient</span></label>
+          <label><input type="radio" name="iconFill" data-key="iconFill" value="none"><span>None</span></label>
+        </div>
+      </div>
+      <div class="two" data-when="iconFill:!none" hidden>
+        <div class="field"><span data-when="iconFill:gradient">From</span><span data-when="iconFill:solid">Colour</span> <button type="button" class="color-button" data-color="iconBg"></button></div>
+        <div class="field" data-when="iconFill:gradient" hidden>To <button type="button" class="color-button" data-color="iconBg2"></button></div>
+      </div>
+      <label data-when="iconFill:gradient" hidden>Direction
+        <span class="range"><input type="range" data-key="iconAngle" min="0" max="360" step="5"><output data-out="iconAngle" data-unit="°"></output></span>
+      </label>
+    </fieldset>
+
+    <fieldset data-when="mode:icon" hidden>
+      <legend>Glyph</legend>
+      <div class="field">Colour <button type="button" class="color-button" data-color="iconInk"></button>
+        <span class="hint" id="icon-contrast"></span>
+      </div>
+      <label>Size
+        <span class="range"><input type="range" data-key="iconScale" min="20" max="100" step="1"><output data-out="iconScale" data-unit="%"></output></span>
+      </label>
+      <label>Stroke weight
+        <span class="range"><input type="range" data-key="iconStroke" min="0.5" max="3.5" step="0.25"><output data-out="iconStroke" data-unit=""></output></span>
+      </label>
+      <label>Rotate
+        <span class="range"><input type="range" data-key="iconRotate" min="0" max="345" step="15"><output data-out="iconRotate" data-unit="°"></output></span>
+      </label>
+    </fieldset>
+
+    <fieldset data-when="mode:icon" hidden>
+      <legend>Ring</legend>
+      <label>Width
+        <span class="range"><input type="range" data-key="iconRing" min="0" max="6" step="0.5"><output data-out="iconRing" data-unit="" id="icon-ring-out"></output></span>
+      </label>
+      <div class="two" data-when="iconRing:!0" hidden>
+        <div class="field">Colour <button type="button" class="color-button" data-color="iconRingInk"></button></div>
+        <label>Inset
+          <span class="range"><input type="range" data-key="iconRingInset" min="0" max="10" step="0.5"><output data-out="iconRingInset" data-unit=""></output></span>
+        </label>
+      </div>
+      <span class="hint">Width and inset are in pixels on a 64 × 64 icon.</span>
+    </fieldset>
+
+    <fieldset data-when="mode:icon" hidden>
+      <legend>Export</legend>
+      <div class="segmented" role="radiogroup" aria-label="File type">
+        <label><input type="radio" name="iconFormat" data-key="iconFormat" value="png"><span>PNG</span></label>
+        <label><input type="radio" name="iconFormat" data-key="iconFormat" value="svg"><span>SVG</span></label>
+        <label><input type="radio" name="iconFormat" data-key="iconFormat" value="ico"><span>ICO</span></label>
+      </div>
+      <div class="field" data-when="iconFormat:png">
+        <label for="icon-size">Width and height in pixels</label>
+        <input type="number" id="icon-size" data-key="iconSize" min="16" max="4096" step="1" inputmode="numeric">
+        <div class="sizes" id="icon-sizes-pick" aria-label="Common sizes"></div>
+      </div>
+      <span class="hint" id="icon-format-hint"></span>
+      <button type="button" class="primary" id="icon-download">Download PNG</button>
+      <div class="row">
+        <button type="button" id="icon-copy-svg">Copy SVG</button>
+        <button type="button" id="icon-copy-link">Copy link</button>
+        <button type="button" id="icon-reset">Start over</button>
+      </div>
+      <p class="status" id="icon-status" role="status" aria-live="polite"></p>
+      <span class="hint">Icons from <a href="https://lucide.dev">Lucide</a> <span id="icon-version"></span>, <a href="vendor/lucide-LICENSE.txt">ISC licence</a>. Free to use, also commercially.</span>
+    </fieldset>
+
     <fieldset data-when="mode:banner">
       <legend>Size</legend>
       <label>Format
@@ -495,7 +637,7 @@
       </div>
     </fieldset>
 
-    <fieldset data-when="mode:!rank">
+    <fieldset data-when="mode:!rank,mode:!icon">
       <legend>Text</legend>
       <label data-when="mode:banner|mode:logo,logoType:wordmark|mode:logo,logoType:lockup">Wordmark
         <input type="text" class="caps" data-key="wordmark" spellcheck="false" maxlength="40">
@@ -519,7 +661,7 @@
       </div>
     </fieldset>
 
-    <fieldset>
+    <fieldset data-when="mode:!icon">
       <legend>Theme</legend>
       <div class="themes" id="themes" role="radiogroup" aria-label="Theme"></div>
       <div class="group" data-when="theme:custom" hidden>
@@ -607,7 +749,7 @@
       </label>
     </fieldset>
 
-    <fieldset>
+    <fieldset data-when="mode:!icon">
       <legend>Layout</legend>
       <div class="segmented" role="radiogroup" aria-label="Alignment" data-when="mode:banner">
         <label><input type="radio" name="align" data-key="align" value="left"><span>Left</span></label>
@@ -631,7 +773,7 @@
       </div>
     </fieldset>
 
-    <fieldset data-when="mode:!rank">
+    <fieldset data-when="mode:!rank,mode:!icon">
       <legend>Animation</legend>
       <label>Animation
         <select data-key="animate" id="animate-select"></select>
@@ -682,7 +824,7 @@
       <span class="hint" id="animate-hint" data-when="animate:!none" hidden></span>
     </fieldset>
 
-    <fieldset>
+    <fieldset data-when="mode:!icon">
       <legend>Export</legend>
       <div class="two">
         <label>Format
@@ -716,12 +858,17 @@
 
   <section class="stage" aria-label="Preview">
     <div class="frame" id="frame">
+      <div class="icon-skeleton" id="icon-skeleton" aria-hidden="true" hidden></div>
       <div class="canvas">
         <img id="preview" alt="">
         <div class="safe" id="safe" hidden></div>
       </div>
     </div>
     <p class="meta"><span id="format"></span><b id="dims"></b></p>
+    <div class="at-sizes" id="at-sizes" hidden>
+      <p class="at-title">At real size</p>
+      <div class="at-row" id="at-row"></div>
+    </div>
   </section>
 </main>
 
@@ -739,7 +886,7 @@
 </div>
 
 <footer>
-  Made by <a href="https://github.com/cartiqolabs">CARTIQO Labs</a>. The wordmark is drawn from the same strokes as the CARTIQO logo.
+  Made by <a href="https://github.com/cartiqolabs">CARTIQO Labs</a>. The wordmark is drawn from the same strokes as the CARTIQO logo. Icons from <a href="https://lucide.dev">Lucide</a> (<a href="vendor/lucide-LICENSE.txt">ISC licence</a>).
 </footer>
 
 <script>
@@ -747,8 +894,8 @@
 // old scripts. Asking for them with the page's deploy time keeps them in step.
 (function () {
   const version = Date.parse(document.lastModified) || Date.now();
-  let left = 2;
-  ['banner.js', 'encoders.js'].forEach(function (file) {
+  let left = 3;
+  ['banner.js', 'encoders.js', 'icon.js'].forEach(function (file) {
     const s = document.createElement('script');
     s.src = file + '?v=' + version;
     s.onload = function () { if (--left === 0) start(); };
@@ -835,7 +982,11 @@ function start() {
     rankRadius: 24,
     rankFill: false,
     rankWatermark: false,
+    iconFormat: 'png',
   };
+  // The Icon tab's settings: iconName, iconShape, iconBg and so on.
+  const I = window.CartiqoIcon;
+  Object.assign(DEFAULTS, I.DEFAULTS);
   // Each logo type starts from its usual background and padding.
   const LOGO_TYPES = {
     wordmark: { name: 'Wordmark', logoBg: 'none', padding: 12 },
@@ -1011,6 +1162,7 @@ function start() {
   }
 
   function currentSvg(extra) {
+    if (state.mode === 'icon') return iconSvg();
     if (state.mode === 'rank') return B.renderRankCard(Object.assign(rankOptions(), extra));
     return state.mode === 'logo' ? B.renderLogo(Object.assign(logoOptions(), extra)) : B.render(Object.assign(options(), extra));
   }
@@ -1062,9 +1214,10 @@ function start() {
 
   let statusTimer = 0;
   function say(text) {
-    $('status').textContent = text;
+    const el = $(state.mode === 'icon' ? 'icon-status' : 'status');
+    el.textContent = text;
     clearTimeout(statusTimer);
-    statusTimer = setTimeout(function () { $('status').textContent = ''; }, 5000);
+    statusTimer = setTimeout(function () { el.textContent = ''; }, 5000);
   }
 
   function copy(text, done) {
@@ -1331,6 +1484,9 @@ function start() {
     ink: { get: function () { return state.ink; }, set: function (v) { state.ink = v; } },
     bg2: { get: function () { return state.bg2 || autoBg2(); }, set: function (v) { state.bg2 = v; } },
   };
+  ['iconBg', 'iconBg2', 'iconInk', 'iconRingInk'].forEach(function (key) {
+    colourFields[key] = { get: function () { return state[key]; }, set: function (v) { state[key] = v; } };
+  });
   document.querySelectorAll('[data-color]').forEach(function (button) {
     const f = colourFields[button.dataset.color];
     button.setAttribute('aria-haspopup', 'dialog');
@@ -1479,12 +1635,14 @@ function start() {
     previewUrl = url;
     const size = sizeOf(svg);
     const logo = state.mode === 'logo';
-    $('preview').alt = (logo ? 'Logo' : 'Banner') + ' preview, ' + size.width + ' by ' + size.height;
+    const icon = state.mode === 'icon';
+    $('preview').alt = (icon ? 'Icon' : logo ? 'Logo' : state.mode === 'rank' ? 'Rank card' : 'Banner') + ' preview, ' + size.width + ' by ' + size.height;
     $('preview').classList.toggle('logo', logo);
-    $('preview').parentNode.classList.toggle('checker', logo);
+    $('preview').classList.toggle('icon', icon);
+    $('preview').parentNode.classList.toggle('checker', logo || (icon && state.iconFill === 'none'));
 
     const p = preset();
-    $('format').textContent = state.mode === 'rank' ? 'Rank card' : logo ? LOGO_TYPES[state.logoType].name : p ? p.name : 'Custom size';
+    $('format').textContent = icon ? 'Icon · ' + state.iconName.replace(/-/g, ' ') : state.mode === 'rank' ? 'Rank card' : logo ? LOGO_TYPES[state.logoType].name : p ? p.name : 'Custom size';
     $('dims').textContent = size.width + ' × ' + size.height;
 
     const safe = $('safe');
@@ -1497,6 +1655,7 @@ function start() {
     }
 
     paintControls();
+    paintIcon(url);
     writeHash();
   }
 
@@ -1538,7 +1697,7 @@ function start() {
       state.bg = from.bg;
       state.ink = from.ink;
     }
-    if (key === 'logoSize') {
+    if (key === 'logoSize' || key === 'iconSize') {
       v = Math.round(v);
       if (!(v >= 16 && v <= 4096)) return;
     }
@@ -2203,6 +2362,337 @@ function start() {
     syncControls();
     update();
     say('Back to the CARTIQO defaults. The size stayed.');
+  });
+
+  // Icon tab
+
+  const ICON_SIZES = [16, 32, 64, 128, 256, 512, 1024];
+  const ICO_SIZES = [16, 32, 48, 64, 128, 256];
+  const PAGE = 120; // icons drawn at once; "Show more" adds the next lot
+  const icons = { list: null, byName: {}, status: 'idle', query: '', cat: '', shown: PAGE, results: [] };
+
+  function glyph(name) {
+    return icons.byName[name] || '';
+  }
+
+  function iconSvg(extra) {
+    return I.render(Object.assign({}, state, extra), glyph(state.iconName));
+  }
+
+  function svgUrl(svg) {
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  }
+
+  // The icon set is half a megabyte, so it loads the first time the tab opens.
+  function loadIcons() {
+    // Only from idle: after a failure it waits for Retry instead of looping.
+    if (icons.status !== 'idle') return;
+    icons.status = 'loading';
+    paintGrid();
+    const s = document.createElement('script');
+    s.src = 'vendor/lucide.js?v=' + (Date.parse(document.lastModified) || Date.now());
+    function failed() {
+      s.remove();
+      icons.status = 'error';
+      paintGrid();
+      update();
+    }
+    s.onload = function () {
+      const data = window.CartiqoLucide;
+      if (!data || !data.icons) { failed(); return; }
+      icons.list = data.icons;
+      data.icons.forEach(function (i) { icons.byName[i[0]] = i[1]; });
+      if (!icons.byName[state.iconName]) state.iconName = I.DEFAULTS.iconName;
+      $('icon-version').textContent = data.version;
+      icons.status = 'ready';
+      search();
+      // A shared link can pick an icon far down the list: show it and scroll to it.
+      const at = icons.results.findIndex(function (i) { return i[0] === state.iconName; });
+      if (at >= icons.shown) { icons.shown = at + PAGE; paintGrid(); }
+      const on = grid.querySelector('[aria-checked=true]');
+      if (on) grid.scrollTop = on.offsetTop - grid.offsetTop - 48;
+      update();
+    };
+    s.onerror = failed;
+    document.head.appendChild(s);
+  }
+
+  function search() {
+    const q = icons.query.trim().toLowerCase().replace(/\s+/g, ' ');
+    const words = q ? q.split(' ') : [];
+    const cat = I.CATEGORIES.find(function (c) { return c.name === icons.cat; });
+    const ranked = [];
+    icons.list.forEach(function (i) {
+      const name = i[0];
+      if (cat && !cat.test.test(name)) return;
+      // With no search, icons from the categories come first: they are the
+      // ones people make icons from, and Lucide's A to Z starts with text tools.
+      let rank = cat ? 0 : I.CATEGORIES.findIndex(function (c) { return c.test.test(name); });
+      if (rank < 0) rank = I.CATEGORIES.length;
+      if (words.length) {
+        // Each word has to start a word of the name or a tag, so star finds
+        // star-half but not align-start.
+        const spaced = name.replace(/-/g, ' ');
+        const inName = function (w) { return (' ' + spaced).indexOf(' ' + w) >= 0; };
+        const inTags = function (w) { return (' ' + i[2]).indexOf(' ' + w) >= 0; };
+        if (spaced === q) rank = 0;
+        else if (spaced.indexOf(q) === 0) rank = 1;
+        else if (words.every(inName)) rank = 2;
+        else if (words.every(function (w) { return inName(w) || inTags(w); })) rank = 3;
+        else return;
+      }
+      ranked.push({ i: i, rank: rank });
+    });
+    ranked.sort(function (a, b) { return a.rank - b.rank; });
+    icons.results = ranked.map(function (r) { return r.i; });
+    icons.shown = PAGE;
+    paintGrid();
+  }
+
+  const grid = $('icon-grid');
+  function paintGrid() {
+    const ready = icons.status === 'ready';
+    grid.setAttribute('aria-busy', String(icons.status === 'loading'));
+    grid.hidden = icons.status === 'error';
+    $('icon-error').hidden = icons.status !== 'error';
+    $('icon-query').disabled = !ready;
+    if (!ready) {
+      grid.innerHTML = icons.status === 'loading' ? new Array(25).join('<div class="skel"></div>') : '';
+      $('icon-count').textContent = icons.status === 'loading' ? 'Loading the icons…' : '';
+      $('icon-more').hidden = true;
+      return;
+    }
+    const list = icons.results.slice(0, icons.shown);
+    const tabbable = list.some(function (i) { return i[0] === state.iconName; }) ? state.iconName : list.length ? list[0][0] : null;
+    grid.innerHTML = list.map(function (i) {
+      const on = i[0] === state.iconName;
+      return '<button type="button" role="radio" aria-checked="' + on + '" tabindex="' + (i[0] === tabbable ? 0 : -1) + '" data-icon="' + i[0] + '" title="' + i[0] + '" aria-label="' + i[0].replace(/-/g, ' ') + '">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' + i[1] + '</svg></button>';
+    }).join('') || '<p class="empty">No icons match “' + icons.query.replace(/[<&]/g, '') + '”' + (icons.cat ? ' in ' + icons.cat : '') + '. Try another word, like star or heart.</p>';
+    const total = icons.results.length;
+    const fmt = function (x) { return x.toLocaleString('en'); };
+    $('icon-count').textContent = !total ? '' :
+      (total > list.length ? 'Showing ' + fmt(list.length) + ' of ' : '') + fmt(total) + (total === 1 ? ' icon' : ' icons') + (icons.query || icons.cat ? ' found' : '');
+    $('icon-more').hidden = total <= list.length;
+  }
+
+  function pickIcon(name) {
+    state.iconName = name;
+    grid.querySelectorAll('button[data-icon]').forEach(function (b) {
+      const on = b.dataset.icon === name;
+      b.setAttribute('aria-checked', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    schedule();
+  }
+
+  grid.addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-icon]');
+    if (b) pickIcon(b.dataset.icon);
+  });
+  // Arrow keys move through the grid and pick as they go, like other radio groups.
+  grid.addEventListener('keydown', function (e) {
+    const buttons = Array.prototype.slice.call(grid.querySelectorAll('button[data-icon]'));
+    const at = buttons.indexOf(document.activeElement);
+    if (at < 0) return;
+    const top = buttons[0].offsetTop;
+    let cols = buttons.findIndex(function (b) { return b.offsetTop !== top; });
+    if (cols < 0) cols = buttons.length;
+    const to = { ArrowRight: at + 1, ArrowLeft: at - 1, ArrowDown: at + cols, ArrowUp: at - cols, Home: 0, End: buttons.length - 1 }[e.key];
+    if (to == null) return;
+    e.preventDefault();
+    const b = buttons[Math.max(0, Math.min(buttons.length - 1, to))];
+    b.focus();
+    pickIcon(b.dataset.icon);
+  });
+
+  let searchTimer = 0;
+  $('icon-query').addEventListener('input', function (e) {
+    icons.query = e.target.value;
+    $('icon-clear').hidden = !icons.query;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(search, 80);
+  });
+  $('icon-query').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && icons.query) { e.preventDefault(); $('icon-clear').click(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const first = grid.querySelector('button[data-icon]');
+      if (first) { first.focus(); pickIcon(first.dataset.icon); }
+    }
+  });
+  $('icon-clear').addEventListener('click', function () {
+    $('icon-query').value = '';
+    icons.query = '';
+    $('icon-clear').hidden = true;
+    search();
+    $('icon-query').focus();
+  });
+  $('icon-more').addEventListener('click', function () {
+    icons.shown += PAGE * 2;
+    paintGrid();
+  });
+  $('icon-retry').addEventListener('click', function () {
+    icons.status = 'idle';
+    loadIcons();
+  });
+
+  const cats = $('icon-cats');
+  ['All'].concat(I.CATEGORIES.map(function (c) { return c.name; })).forEach(function (name) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = name;
+    b.dataset.cat = name === 'All' ? '' : name;
+    b.setAttribute('aria-pressed', String(name === 'All'));
+    b.addEventListener('click', function () {
+      icons.cat = b.dataset.cat;
+      cats.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      if (icons.status === 'ready') search();
+    });
+    cats.appendChild(b);
+  });
+
+  const shapes = $('icon-shapes');
+  I.SHAPES.forEach(function (sh) {
+    shapes.insertAdjacentHTML('beforeend', '<label><input type="radio" name="iconShape" data-key="iconShape" value="' + sh.id + '"><span>' + sh.name + '</span></label>');
+  });
+
+  const presetKeys = ['iconShape', 'iconFill', 'iconBg', 'iconBg2', 'iconAngle', 'iconInk', 'iconRing', 'iconRingInk', 'iconRingInset'];
+  const presets = $('icon-presets');
+  I.PRESETS.forEach(function (pr) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'preset';
+    b.dataset.preset = pr.id;
+    b.innerHTML = '<img alt=""><span>' + pr.name + '</span>';
+    b.addEventListener('click', function () {
+      presetKeys.forEach(function (k) { if (k in pr) state[k] = pr[k]; });
+      picker.close(false);
+      syncControls();
+      schedule();
+    });
+    presets.appendChild(b);
+  });
+  function presetMatches(pr) {
+    return presetKeys.every(function (k) {
+      if (!(k in pr)) return true;
+      if (k === 'iconBg' && pr.iconFill === 'none') return true;
+      if ((k === 'iconBg2' || k === 'iconAngle') && pr.iconFill !== 'gradient') return true;
+      if ((k === 'iconRingInk' || k === 'iconRingInset') && !pr.iconRing) return true;
+      return state[k] === pr[k];
+    });
+  }
+
+  const sizesPick = $('icon-sizes-pick');
+  ICON_SIZES.forEach(function (px) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = px;
+    b.dataset.px = px;
+    b.addEventListener('click', function () {
+      state.iconSize = px;
+      syncControls();
+      schedule();
+    });
+    sizesPick.appendChild(b);
+  });
+
+  const ICON_FORMATS = {
+    png: 'Full colour and keeps transparency. Discord role icons are 64 × 64; app stores want 512 or 1024.',
+    svg: 'Sharp at any size, and small enough to paste into code.',
+    ico: 'A favicon with ' + ICO_SIZES.join(', ') + ' pixel sizes in one file.',
+  };
+
+  const atRow = $('at-row');
+  atRow.innerHTML = ['', 'light'].map(function (cls) {
+    return '<div class="at-bg ' + cls + '">' + [64, 32, 20, 16].map(function (px) {
+      return '<figure><img width="' + px + '" height="' + px + '" alt=""><figcaption>' + px + '</figcaption></figure>';
+    }).join('') + '</div>';
+  }).join('');
+
+  function paintIcon(url) {
+    const on = state.mode === 'icon';
+    if (on) loadIcons();
+    const ready = icons.status === 'ready';
+    $('at-sizes').hidden = !on || !ready;
+    $('icon-skeleton').hidden = !on || ready;
+    $('icon-skeleton').className = 'icon-skeleton' + (icons.status === 'loading' ? ' skel' : '');
+    $('preview').hidden = on && !ready;
+    $('frame').setAttribute('aria-busy', String(on && icons.status === 'loading'));
+    if (!on) return;
+
+    atRow.querySelectorAll('img').forEach(function (img) { img.src = url; });
+    const g = glyph(state.iconName);
+    presets.querySelectorAll('.preset').forEach(function (b) {
+      const pr = I.PRESETS.find(function (x) { return x.id === b.dataset.preset; });
+      b.querySelector('img').src = svgUrl(I.render(Object.assign({}, state, pr, { iconSize: 40 }), g));
+      b.setAttribute('aria-pressed', String(presetMatches(pr)));
+    });
+    sizesPick.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', Number(b.dataset.px) === state.iconSize); });
+    $('icon-ring-out').textContent = state.iconRing ? state.iconRing : 'Off';
+    $('icon-format-hint').textContent = ICON_FORMATS[state.iconFormat] || '';
+    $('icon-download').textContent = 'Download ' + state.iconFormat.toUpperCase();
+    ['icon-download', 'icon-copy-svg'].forEach(function (id) { $(id).disabled = !ready; });
+
+    const hint = $('icon-contrast');
+    if (state.iconFill === 'none') {
+      hint.textContent = 'With no background the glyph sits on whatever it is placed on.';
+      hint.classList.remove('warn');
+    } else {
+      const ratio = Math.min(B.contrast(state.iconBg, state.iconInk), state.iconFill === 'gradient' ? B.contrast(state.iconBg2, state.iconInk) : Infinity);
+      hint.textContent = 'Contrast with the background ' + ratio.toFixed(1) + ':1' + (ratio < 3 ? '. Small sizes need 3:1 or more to stay clear.' : '.');
+      hint.classList.toggle('warn', ratio < 3);
+    }
+  }
+
+  function iconFile(ext, size) {
+    return 'cartiqo-icon-' + state.iconName + (size ? '-' + size : '') + '.' + ext;
+  }
+
+  function iconPng(px) {
+    return loadSvg(iconSvg({ iconSize: px })).then(function (img) {
+      const canvas = document.createElement('canvas');
+      canvas.width = px;
+      canvas.height = px;
+      canvas.getContext('2d').drawImage(img, 0, 0, px, px);
+      return toBlob(canvas, 'image/png');
+    });
+  }
+
+  const iconExporters = {
+    png: function () {
+      return iconPng(state.iconSize).then(function (blob) { saved(blob, iconFile('png', state.iconSize)); });
+    },
+    svg: function () {
+      saved(new Blob([iconSvg()], { type: 'image/svg+xml' }), iconFile('svg'));
+    },
+    ico: function () {
+      return Promise.all(ICO_SIZES.map(function (px) {
+        return iconPng(px).then(function (b) { return b.arrayBuffer(); }).then(function (buf) { return { size: px, png: new Uint8Array(buf) }; });
+      })).then(function (images) {
+        saved(new Blob([E.createIco(images)], { type: 'image/x-icon' }), iconFile('ico'));
+      });
+    },
+  };
+
+  $('icon-download').addEventListener('click', function () {
+    const button = $('icon-download');
+    if (button.disabled) return;
+    button.disabled = true;
+    const kind = state.iconFormat.toUpperCase();
+    Promise.resolve().then(iconExporters[state.iconFormat] || iconExporters.png).catch(function (err) {
+      say((err && err.friendly ? err.message : 'The ' + kind + ' could not be made in this browser.') + ' Press Download to try again, or pick SVG.');
+    }).then(function () { button.disabled = false; });
+  });
+  $('icon-copy-svg').addEventListener('click', function () { copy(iconSvg(), 'Copied the SVG.'); });
+  $('icon-copy-link').addEventListener('click', function () { copy(location.href, 'Copied a link to this icon.'); });
+  $('icon-reset').addEventListener('click', function () {
+    const keep = { iconName: state.iconName, iconSize: state.iconSize, iconFormat: state.iconFormat };
+    Object.assign(state, I.DEFAULTS, keep);
+    picker.close(false);
+    syncControls();
+    update();
+    say('Back to the CARTIQO defaults. The icon and size stayed.');
   });
 
   $('mark').innerHTML = B.wordmark('CARTIQO.', 'currentColor', B.ACCENTS.cartiqo.dark);
