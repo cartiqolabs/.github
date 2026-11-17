@@ -1,0 +1,36 @@
+{
+  "name": "@cartiqo/mail",
+  "version": "0.1.0",
+  "description": "Send email from your own domain with the CARTIQO Mail API: emails, batches, scheduled sends, templates with 14 ready-made presets, signed webhooks and a command line.",
+  "license": "MIT",
+  "author": "CARTIQO Labs (https://cartiqolabs.com)",
+  "homepage": "https://cartiqo.email/mail/docs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cartiqolabs/.github.git",
+    "directory": "packages/mail"
+  },
+  "bugs": "https://github.com/cartiqolabs/.github/issues",
+  "keywords": ["cartiqo", "email", "transactional-email", "email-api", "templates", "webhooks", "smtp", "ses"],
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "cartiqo-mail": "bin/cartiqo-mail.js"
+  },
+  "files": ["index.js", "index.mjs", "index.d.ts", "lib", "bin", "README.md", "LICENSE"],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/mail.test.js"
+  }
+}
