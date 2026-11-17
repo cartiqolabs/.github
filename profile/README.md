@@ -30,7 +30,7 @@ Everything we make is on [cartiqolabs.com](https://cartiqolabs.com).
 
 ## Brand kit
 
-- [Banners, logos and icons](https://cartiqolabs.github.io/.github/): makes CARTIQO banners in the sizes GitHub, Discord, X, LinkedIn and YouTube want, the CARTIQO wordmark, rank cards, and icons from the open-source Lucide set on a CARTIQO shape.
+- [Banners, logos and icons](https://cartiqolabs.com/studio/): makes CARTIQO banners in the sizes GitHub, Discord, X, LinkedIn and YouTube want, the CARTIQO wordmark, rank cards, and icons from the open-source Lucide set on a CARTIQO shape.
 - [@cartiqo/brand](https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme): the same banners, logos and rank cards from JavaScript, the command line or an HTTP API.
 
 ## Open source

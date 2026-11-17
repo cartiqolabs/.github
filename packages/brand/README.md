@@ -4,7 +4,7 @@ CARTIQO banners, logos and rank cards from code, the command line or a web addre
 
 ![A rank card for Nova: level 12, rank 3, 1,250 of 2,000 XP](https://raw.githubusercontent.com/cartiqolabs/.github/main/packages/brand/examples/rank-card.png)
 
-Want to design first? Open the [banner and logo maker](https://cartiqolabs.github.io/.github/), set things up the way you like, and press **Copy code**. You get the exact code for this package.
+Want to design first? Open the [banner and logo maker](https://cartiqolabs.com/studio/), set things up the way you like, and press **Copy code**. You get the exact code for this package.
 
 **Contents**
 
@@ -309,7 +309,7 @@ If you're using TypeScript, every option is typed and your editor will complete 
 - **Limits:**
   - PNGs up to 40 megapixels, and banners from 16 to 6000 pixels a side. Logos are 16 to 4096 pixels.
   - GIFs and animated PNGs are scaled down to fit 2560 × 1440 at most, because they are encoded in JavaScript.
-- **Same as the website:** the package uses the same renderer as the [banner and logo maker](https://cartiqolabs.github.io/.github/), so what you design there is what you get here.
+- **Same as the website:** the package uses the same renderer as the [banner and logo maker](https://cartiqolabs.com/studio/), so what you design there is what you get here.
 
 ## License
 
