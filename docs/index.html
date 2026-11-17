@@ -9,6 +9,11 @@
   // This page now lives at cartiqolabs.com/studio/, which serves these same files. GitHub Pages sends people there,
   // with whatever came after the address (a tab, a preset).
   if (location.hostname === 'cartiqolabs.github.io') location.replace('https://cartiqolabs.com/studio/' + location.search + location.hash);
+  // The light or dark theme someone chose on cartiqolabs.com (the same origin, so the same storage).
+  try {
+    var t = localStorage.getItem('cq_theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
 </script>
 <meta name="description" content="Make CARTIQO banners in the sizes GitHub, Discord, X, LinkedIn and YouTube want, CARTIQO logos, and icons from the Lucide set on a CARTIQO shape.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E1013'/%3E%3Cpath d='M19.5 6 H11 A4 4 0 0 0 7 10 V22 A4 4 0 0 0 11 26 H19.5' fill='none' stroke='%23F4F4F6' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='24' r='2.2' fill='%237C5CFF'/%3E%3C/svg%3E">
@@ -16,37 +21,62 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* The CARTIQO design system's tokens (cartiqolabs/cartiqo core/ui/src/cartiqo.css), as cartiqolabs.com, the CARTIQO
+     Bot, Anchor and Mail use them: light by default, dark from the system or from the theme chosen on cartiqolabs.com
+     (cq_theme, applied in the script above). Labs' accent is ink. The names below are this page's own. */
   :root {
-    --bg: #0E1013;
-    --surface: #15171B;
-    --surface-2: #1B1E23;
-    --line: rgba(244, 244, 246, 0.1);
-    --line-strong: rgba(244, 244, 246, 0.2);
-    --ink: #F4F4F6;
-    --muted: rgba(244, 244, 246, 0.64);
-    --faint: rgba(244, 244, 246, 0.42);
-    --accent: #7C5CFF;
-    --accent-hover: #6A47FF;
-    --on-accent: #FFFFFF;
-    --focus: #9F8AFF;
-    --danger: #FF7A80;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f5f5f6;
+    --line: #e7e7ea;
+    --line-strong: #d4d4d8;
+    --ink: #09090b;
+    --muted: #5c5c66;
+    --faint: #6e6e78;
+    --accent: #09090b;
+    --accent-hover: #27272a;
+    --on-accent: #ffffff;
+    --focus: #2c54f5;
+    --danger: #d4232f;
+    --shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.06);
     --radius: 8px;
-    color-scheme: dark;
+    color-scheme: light;
   }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg: #FFFAFA;
-      --surface: #FFFFFF;
-      --surface-2: #F5F2F2;
-      --line: rgba(17, 17, 19, 0.1);
-      --line-strong: rgba(17, 17, 19, 0.22);
-      --ink: #111113;
-      --muted: rgba(17, 17, 19, 0.66);
-      --faint: rgba(17, 17, 19, 0.45);
-      --focus: #6A47FF;
-      --danger: #D4232F;
-      color-scheme: light;
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #09090b;
+      --surface: #111113;
+      --surface-2: #18181b;
+      --line: #232327;
+      --line-strong: #3a3a40;
+      --ink: #f4f4f5;
+      --muted: #a1a1aa;
+      --faint: #8a8a93;
+      --accent: #f4f4f5;
+      --accent-hover: #d4d4d8;
+      --on-accent: #09090b;
+      --focus: #3ba9ff;
+      --danger: #ff7a80;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+      color-scheme: dark;
     }
+  }
+  :root[data-theme="dark"] {
+    --bg: #09090b;
+    --surface: #111113;
+    --surface-2: #18181b;
+    --line: #232327;
+    --line-strong: #3a3a40;
+    --ink: #f4f4f5;
+    --muted: #a1a1aa;
+    --faint: #8a8a93;
+    --accent: #f4f4f5;
+    --accent-hover: #d4d4d8;
+    --on-accent: #09090b;
+    --focus: #3ba9ff;
+    --danger: #ff7a80;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
@@ -65,21 +95,32 @@
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
   .top {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     padding: 0 24px;
-    height: 56px;
+    height: 60px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
     border-bottom: 1px solid var(--line);
   }
-  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-  .brand .mark { display: block; height: 15px; }
-  .brand .mark svg { display: block; height: 100%; width: auto; }
-  .brand .name { color: var(--muted); font-weight: 500; padding-left: 12px; border-left: 1px solid var(--line-strong); line-height: 18px; }
-  .top nav { display: flex; gap: 20px; }
-  .top nav a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 13px; }
-  .top nav a:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
+  .brand .logo { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: var(--ink); color: var(--on-accent); font-weight: 700; font-size: 14px; line-height: 1; }
+  .brand b { font-weight: 650; letter-spacing: -0.01em; font-size: 15px; }
+  .brand .sub { color: var(--muted); font-weight: 500; font-size: 15px; }
+  .brand .name { color: var(--muted); font-weight: 500; padding-left: 12px; margin-left: 2px; border-left: 1px solid var(--line-strong); line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top nav { display: flex; align-items: center; gap: 4px; }
+  .top nav a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 13px; padding: 8px 10px; border-radius: 8px; }
+  .top nav a:hover, .top nav a[aria-current=page] { color: var(--ink); background: var(--surface-2); }
+  .top nav .theme { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border-color: transparent; background: none; color: var(--muted); }
+  .top nav .theme:hover { color: var(--ink); background: var(--surface-2); }
+  .top nav .theme svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  @media (max-width: 720px) { .brand .name, .top nav .wide { display: none; } }
 
   .app {
     flex: 1;
@@ -118,14 +159,14 @@
     border-radius: 4px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   }
-  .safe { position: absolute; border: 1px dashed #FF7A80; pointer-events: none; }
+  .safe { position: absolute; border: 1px dashed var(--danger); pointer-events: none; }
   .safe::after {
     content: 'Safe area';
     position: absolute;
     top: 4px;
     left: 6px;
     font: 500 11px/1 Geist, system-ui, sans-serif;
-    color: #FF7A80;
+    color: var(--danger);
   }
   .canvas.checker { background: repeating-conic-gradient(rgba(128, 128, 128, 0.22) 0 25%, transparent 0 50%) 0 0 / 16px 16px; border-radius: 4px; }
   .canvas img.logo { height: min(260px, 42vh); width: auto; max-width: 100%; object-fit: contain; box-shadow: none; border-radius: 0; }
@@ -401,7 +442,7 @@
     .at-row { grid-template-columns: 1fr; }
     .at-bg { padding: 8px 10px; }
     .top { padding: 0 16px; }
-    .top nav a:not(:last-child) { display: none; }
+    .top nav .wide { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
@@ -411,14 +452,16 @@
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="https://github.com/cartiqolabs" aria-label="CARTIQO Labs on GitHub">
-    <span class="mark" id="mark"></span>
-    <span class="name">Banners, logos and icons</span>
+  <a class="brand" href="/" aria-label="CARTIQO Labs home">
+    <span class="logo" aria-hidden="true">C</span>
+    <b>CARTIQO</b><span class="sub">Labs</span>
+    <span class="name">Studio</span>
   </a>
-  <nav>
-    <a href="https://github.com/cartiqolabs/.github/tree/main/packages/brand#readme">npm and API</a>
-    <a href="https://github.com/cartiqolabs/.github/tree/main/docs">Source</a>
-    <a href="https://discord.gg/A6b4bTTaeJ">Discord</a>
+  <nav aria-label="Studio">
+    <a href="/studio/docs">Docs</a>
+    <a class="wide" href="https://github.com/cartiqolabs/.github/tree/main/docs">Source</a>
+    <a class="wide" href="https://discord.gg/A6b4bTTaeJ">Discord</a>
+    <button type="button" class="theme" id="theme" aria-label="Switch light or dark theme"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
   </nav>
 </header>
 
@@ -1012,7 +1055,7 @@ function start() {
     logoGrain: 0,
     // Rank cards start with sample data so there is something to look at.
     rankName: 'Nova',
-    rankSubtitle: 'CARTIQO Chat',
+    rankSubtitle: 'CARTIQO Labs',
     rankStatus: 'online',
     rankLevel: 12,
     rankRank: 3,
@@ -2810,7 +2853,13 @@ function start() {
     say('Back to the CARTIQO defaults. The icon and size stayed.');
   });
 
-  $('mark').innerHTML = B.wordmark('CARTIQO.', 'currentColor', B.ACCENTS.cartiqo.dark);
+  // Light or dark, remembered the way cartiqolabs.com remembers it (cq_theme).
+  $('theme').addEventListener('click', function () {
+    var dark = getComputedStyle(document.documentElement).colorScheme === 'dark';
+    var next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('cq_theme', next); } catch (e) {}
+  });
 
   window.addEventListener('hashchange', function () {
     Object.assign(state, DEFAULTS, readHash());

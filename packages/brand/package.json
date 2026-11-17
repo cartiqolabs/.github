@@ -4,7 +4,7 @@
   "description": "CARTIQO banners, logos and rank cards as SVG, PNG, GIF and animated PNG, from code, the command line or an HTTP API.",
   "license": "MIT",
   "author": "CARTIQO Labs (https://cartiqolabs.com)",
-  "homepage": "https://cartiqolabs.github.io/.github/",
+  "homepage": "https://cartiqolabs.com/studio/docs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cartiqolabs/.github.git",
