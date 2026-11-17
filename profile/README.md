@@ -24,11 +24,9 @@ Everything we make is on [cartiqolabs.com](https://cartiqolabs.com).
 
 ## Get in touch
 
-| | |
-| --- | --- |
-| Website | [cartiqolabs.com](https://cartiqolabs.com) |
-| Help and feedback | The [CARTIQO Discord](https://discord.gg/A6b4bTTaeJ): ask a question, report a bug or tell us what to build next |
-| Email | [support@cartiqo.app](mailto:support@cartiqo.app) |
+- **Website:** [cartiqolabs.com](https://cartiqolabs.com)
+- **Help and feedback:** the [CARTIQO Discord](https://discord.gg/A6b4bTTaeJ). Ask a question, report a bug or tell us what to build next.
+- **Email:** [support@cartiqo.app](mailto:support@cartiqo.app)
 
 ## Brand kit
 
