@@ -7,7 +7,7 @@
 
 <br>
 
-[![Website](https://img.shields.io/badge/Website-cartiqolabs.com-7C5CFF?style=flat-square&labelColor=111113)](https://cartiqolabs.com) [![Discord](https://img.shields.io/badge/Support-Discord-2A2D34?style=flat-square&labelColor=111113&logo=discord&logoColor=white)](https://discord.gg/A6b4bTTaeJ) [![Email](https://img.shields.io/badge/Email-support%40cartiqo.app-2A2D34?style=flat-square&labelColor=111113)](mailto:support@cartiqo.app) [![Location](https://img.shields.io/badge/Based%20in-Denmark-2A2D34?style=flat-square&labelColor=111113)](https://cartiqolabs.com)
+[![Website](https://img.shields.io/badge/Website-cartiqolabs.com-7C5CFF?style=flat-square&labelColor=111113)](https://cartiqolabs.com) [![Discord](https://img.shields.io/badge/Support-Discord-2A2D34?style=flat-square&labelColor=111113&logo=discord&logoColor=white)](https://discord.gg/A6b4bTTaeJ) [![Email](https://img.shields.io/badge/Email-support%40cartiqo.app-2A2D34?style=flat-square&labelColor=111113)](mailto:contact@cartiqolabs.com) [![Location](https://img.shields.io/badge/Based%20in-Denmark-2A2D34?style=flat-square&labelColor=111113)](https://cartiqolabs.com)
 
 </div>
 
@@ -26,7 +26,7 @@ Everything we make is on [cartiqolabs.com](https://cartiqolabs.com).
 
 - **Website:** [cartiqolabs.com](https://cartiqolabs.com)
 - **Help and feedback:** the [CARTIQO Discord](https://discord.gg/A6b4bTTaeJ). Ask a question, report a bug or tell us what to build next.
-- **Email:** [support@cartiqo.app](mailto:support@cartiqo.app)
+- **Email:** [contact@cartiqolabs.com](mailto:contact@cartiqolabs.com)
 
 ## Brand kit
 
